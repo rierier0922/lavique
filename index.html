@@ -229,25 +229,68 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
     <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--pink);text-align:center;margin-bottom:4px">Lavique</div>
     <div style="font-size:12px;color:var(--ink-light);text-align:center;margin-bottom:24px">転写紙 制作お申込みフォーム</div>
     <div id="regForm">
-      <label class="flabel">お名前 *</label>
-      <input id="rf_name" class="inp" placeholder="例：山田 花子">
       <label class="flabel">メールアドレス *</label>
       <input id="rf_email" class="inp" type="email" placeholder="例：hanako@gmail.com">
-      <label class="flabel">電話番号</label>
+      <label class="flabel">【講座生名】本名で記入 *</label>
+      <input id="rf_name" class="inp" placeholder="例：山田 花子">
+      <label class="flabel">【住所】郵便番号から *</label>
+      <input id="rf_addr" class="inp" placeholder="例：〒530-0001 大阪府大阪市...">
+      <label class="flabel">【電話番号】 *</label>
       <input id="rf_tel" class="inp" type="tel" placeholder="例：090-1234-5678">
-      <label class="flabel">ご住所</label>
-      <input id="rf_addr" class="inp" placeholder="例：大阪府大阪市...">
-      <label class="flabel">転写紙デザイン名 *</label>
-      <input id="rf_design" class="inp" placeholder="例：花のワルツ">
-      <label class="flabel">ご希望仕様</label>
-      <select id="rf_spec" class="inp">
-        <option>A4を2面付け</option>
-        <option>A3</option>
-        <option>その他</option>
+      <label class="flabel">【入稿先工場】 *</label>
+      <select id="rf_factory" class="inp">
+        <option value="">選択してください</option>
+        <option value="恵那シルク">恵那シルク</option>
+        <option value="昭和転写">昭和転写</option>
       </select>
-      <label class="flabel">備考・ご要望</label>
-      <textarea id="rf_note" class="inp" rows="3" placeholder="ご質問やご要望があればご記入ください"></textarea>
-      <div id="regErr" class="err hidden">お名前・メールアドレス・デザイン名は必須です</div>
+      <label class="flabel">【転写紙タイトル】工場入稿する際の総称 *</label>
+      <input id="rf_design" class="inp" placeholder="例：Loveモンスター">
+      <label class="flabel">【入稿形式】推奨：AI *</label>
+      <select id="rf_format" class="inp">
+        <option>AI</option>
+        <option>PDF</option>
+      </select>
+      <label class="flabel">【データ】配置見本＋素材をUPしたGIGAファイルURLを記載 *</label>
+      <input id="rf_data" class="inp" placeholder="例：https://gigafile.nu/...">
+      <label class="flabel">【サイズ】推奨：A4二面付けでA3 *</label>
+      <select id="rf_size" class="inp">
+        <option>A4の2面付けA3</option>
+        <option>A4</option>
+        <option>A3</option>
+      </select>
+      <label class="flabel">【両面の柄】 *</label>
+      <select id="rf_pattern" class="inp">
+        <option>同柄</option>
+        <option>別柄</option>
+      </select>
+      <label class="flabel">【希望枚数】 *</label>
+      <select id="rf_qty" class="inp">
+        <option>30</option>
+        <option>50</option>
+        <option>70</option>
+        <option>100</option>
+        <option>sampleのみ</option>
+      </select>
+      <label class="flabel">【合紙】 *</label>
+      <select id="rf_paper" class="inp">
+        <option>あり</option>
+        <option>なし</option>
+      </select>
+      <label class="flabel">【納品時の裁断希望】 *</label>
+      <select id="rf_cut" class="inp">
+        <option>A3→A4カット希望</option>
+        <option>そのまま</option>
+      </select>
+      <label class="flabel">【サンプル希望】 *</label>
+      <select id="rf_sample" class="inp">
+        <option>サンプル希望</option>
+        <option>サンプル不要</option>
+      </select>
+      <label class="flabel">【見積もり返信期限】通常1週間目安</label>
+      <input id="rf_deadline" class="inp" type="date">
+      <label class="flabel">【備考・修正指示】色の調整希望、大きさのcm希望などあれば細かく指示</label>
+      <textarea id="rf_note" class="inp" rows="4" placeholder="ご質問やご要望があればご記入ください"></textarea>
+      <div id="regErr" class="err hidden">必須項目をすべて入力してください</div>
       <button class="btn btn-p" onclick="submitRegister()" style="margin-top:8px">送信する</button>
     </div>
     <div id="regDone" class="hidden" style="text-align:center;padding:20px 0">
@@ -995,10 +1038,12 @@ function checkRegisterUrl() {
 }
 
 async function submitRegister() {
-  const name   = document.getElementById('rf_name').value.trim();
-  const email  = document.getElementById('rf_email').value.trim();
-  const design = document.getElementById('rf_design').value.trim();
-  if (!name || !email || !design) {
+  const name    = document.getElementById('rf_name').value.trim();
+  const email   = document.getElementById('rf_email').value.trim();
+  const design  = document.getElementById('rf_design').value.trim();
+  const factory = document.getElementById('rf_factory').value;
+  const data    = document.getElementById('rf_data').value.trim();
+  if (!name || !email || !design || !factory || !data) {
     document.getElementById('regErr').classList.remove('hidden'); return;
   }
   document.getElementById('regErr').classList.add('hidden');
@@ -1006,18 +1051,30 @@ async function submitRegister() {
   if (btn) { btn.textContent = '送信中...'; btn.disabled = true; }
   try {
     const key = genKey();
+    const note = [
+      '入稿形式：' + document.getElementById('rf_format').value,
+      'データURL：' + data,
+      'サイズ：' + document.getElementById('rf_size').value,
+      '両面の柄：' + document.getElementById('rf_pattern').value,
+      '希望枚数：' + document.getElementById('rf_qty').value,
+      '合紙：' + document.getElementById('rf_paper').value,
+      '裁断希望：' + document.getElementById('rf_cut').value,
+      'サンプル：' + document.getElementById('rf_sample').value,
+      '見積返信期限：' + (document.getElementById('rf_deadline').value || '未定'),
+      '備考：' + document.getElementById('rf_note').value.trim(),
+    ].join(' | ');
     await db.ref('cases').push({
       studentName:  name,
       studentEmail: email,
       studentTel:   document.getElementById('rf_tel').value.trim(),
       studentAddr:  document.getElementById('rf_addr').value.trim(),
       designName:   design,
-      spec:         document.getElementById('rf_spec').value,
-      note:         document.getElementById('rf_note').value.trim(),
+      spec:         document.getElementById('rf_size').value,
+      note,
       studentKey:   key,
       status:       '入稿受付',
       statusDate:   today(),
-      factory:      '',
+      factory,
       estimate:     0, finalAmount: 0, markup: 0,
       createdAt:    ts(),
     });
@@ -1029,6 +1086,19 @@ async function submitRegister() {
     // Notify admin
     sendNotification(RIE_EMAIL,  name, design, name, 'フォームからの新規お申込みがありました');
     sendNotification(GOTO_EMAIL, name, design, name, 'フォームからの新規お申込みがありました');
+    // Notify student with their URL
+    if (email) {
+      emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
+        to_email:     email,
+        name:         name,
+        sender_name:  'Lavique',
+        case_name:    design,
+        student_name: name,
+        message:      '入稿のお申込みが完了しました。以下があなた専用のページURLです。大切に保管してください。\n\n' + url,
+        app_url:      url,
+        email:        email,
+      }).catch(e => console.log('Student email error:', e));
+    }
   } catch(e) {
     alert('送信に失敗しました。再度お試しください。');
     if (btn) { btn.textContent = '送信する'; btn.disabled = false; }
