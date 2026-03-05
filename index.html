@@ -414,6 +414,10 @@ const ts     = () => Date.now();
 const today  = () => new Date().toLocaleDateString('ja-JP');
 const genKey = () => Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,10);
 const fmtTime = (t) => new Date(t).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const linkify = (text) => {
+  if (!text) return '';
+  return text.replace(/(https?:\/\/[^\s|]+)/g, '<a href="$1" target="_blank" style="color:var(--blue);text-decoration:underline;word-break:break-all">$1</a>');
+};
 const isAdmin = () => role === 'admin' || role === 'goto';
 const isFactory = () => role === 'factory_ena' || role === 'factory_shouwa';
 
@@ -666,7 +670,7 @@ function renderMgrDet(c) {
       <div class="abox" style="background:#fef3c7"><div class="ilbl">手数料</div><div class="ival" style="color:var(--gold)">¥${(c.markup||0).toLocaleString()}</div></div>
     </div>`;
   }
-  if (c.note) html += `<div style="font-size:12px;color:var(--ink-light);padding:6px 8px;background:#f9f8ff;border-radius:8px;margin-bottom:10px">${c.note}</div>`;
+  if (c.note) html += `<div style="font-size:12px;color:var(--ink-light);padding:6px 8px;background:#f9f8ff;border-radius:8px;margin-bottom:10px;line-height:1.8">${linkify(c.note)}</div>`;
   if (stuUrl && role==='admin') {
     html += `<div style="background:var(--pink-bg);border:1.5px solid var(--pink-l);border-radius:10px;padding:10px 12px;margin-bottom:10px">
       <div style="font-size:10px;color:#9f4455;margin-bottom:4px">🔗 生徒用URL</div>
@@ -697,7 +701,7 @@ function renderFctDet(c) {
       <div class="ibox"><div class="ilbl">仕様</div><div class="ival">${c.spec||'—'}</div></div>
       <div class="ibox"><div class="ilbl">ステータス</div><div class="ival">${c.status}</div></div>
     </div>
-    ${c.note?`<div style="font-size:12px;color:var(--ink-light);padding:6px 8px;background:#f9f8ff;border-radius:8px">${c.note}</div>`:''}`;
+    ${c.note?`<div style="font-size:12px;color:var(--ink-light);padding:6px 8px;background:#f9f8ff;border-radius:8px;line-height:1.8">${linkify(c.note)}</div>`:''}`;
   document.getElementById('fctFlow').innerHTML = ST.map(s=>{
     const on=c.status===s.key;
     return `<span class="step" style="background:${on?s.color:'transparent'};color:${on?'#fff':s.color};border-color:${s.color};opacity:${on?1:0.4}">${s.key}</span>`;
