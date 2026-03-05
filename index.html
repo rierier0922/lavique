@@ -679,7 +679,11 @@ function renderMgrDet(c) {
     </div>`;
   }
   if (role==='admin') {
-    html += `<button onclick="notifyFactory()" style="width:100%;padding:9px;background:#dbeafe;border:1.5px solid #93c5fd;border-radius:10px;color:#1d4ed8;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px">📨 新規入稿を工場に通知する</button>`;
+    if (c.factoryNotified) {
+      html += `<div style="width:100%;padding:9px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;color:var(--green);font-size:13px;font-weight:700;text-align:center;margin-bottom:6px">✅ 工場に通知済み（${c.factoryNotifiedAt||''}）</div>`;
+    } else {
+      html += `<button onclick="notifyFactory()" style="width:100%;padding:9px;background:#dbeafe;border:1.5px solid #93c5fd;border-radius:10px;color:#1d4ed8;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px">📨 新規入稿を工場に通知する</button>`;
+    }
     html += `<button class="del-btn" onclick="deleteCase()">🗑️ この案件を削除</button>`;
   }
   document.getElementById('mgrInfo').innerHTML = html;
@@ -741,6 +745,8 @@ function notifyFactory() {
   if (!fe) { alert('工場のメールアドレスが見つかりません。'); return; }
   sendNotification(fe, 'Lavique管理者', c.designName, c.studentName, '新規入稿がありました。ご確認をお願いします。');
   sendNotification(RIE_EMAIL, 'Lavique', c.designName, c.studentName, c.factory + 'に新規入稿通知を送りました。');
+  const notifiedAt = today();
+  db.ref('cases/' + currentId).update({factoryNotified: true, factoryNotifiedAt: notifiedAt});
   alert(c.factory + 'に新規入稿の通知メールを送りました！');
 }
 
@@ -780,19 +786,19 @@ function renderMsgs(msgs, view) {
       }
     }).join('');
   } else if (view === 'fct') {
-    // Factory sees: their own sent messages (pending) + messages forwarded to them
+    // Factory sees: ALL their own sent messages + messages forwarded to them or both
     const visible = sorted.filter(([,m]) =>
-      (isFactory() && (m.sender==='factory_ena'||m.sender==='factory_shouwa') && m.status==='pending') ||
-      (m.status==='forwarded' && m.forwardTo==='factory')
+      (m.sender==='factory_ena' || m.sender==='factory_shouwa') ||
+      (m.status==='forwarded' && (m.forwardTo==='factory' || m.forwardTo==='both'))
     );
     el.innerHTML = visible.length===0
       ? '<div style="text-align:center;color:var(--ink-light);font-size:13px;padding:20px">まだメッセージはありません</div>'
       : visible.map(([,m]) => renderBubble(m,'fct')).join('');
   } else if (view === 'stu') {
-    // Student sees: ALL their own sent messages + messages forwarded to them
+    // Student sees: ALL their own sent messages + messages forwarded to them or both
     const visible = sorted.filter(([,m]) =>
       m.sender === 'student' ||
-      (m.status === 'forwarded' && m.forwardTo === 'student')
+      (m.status === 'forwarded' && (m.forwardTo === 'student' || m.forwardTo === 'both'))
     );
     el.innerHTML = visible.length===0
       ? '<div style="text-align:center;color:var(--ink-light);font-size:13px;padding:20px">まだメッセージはありません</div>'
@@ -914,9 +920,9 @@ function submitMsg(prefix, text, imageUrl) {
 
   let status, forwardTo;
   if (isAdmin()) {
-    // Admin messages go directly as forwarded — admin decides direction
+    // Admin messages go directly as forwarded — visible to both factory and student
     status    = 'forwarded';
-    forwardTo = 'both'; // visible to both in bubble form
+    forwardTo = 'both';
   } else if (isFactory()) {
     status    = 'pending';
     forwardTo = null;
@@ -935,6 +941,13 @@ function submitMsg(prefix, text, imageUrl) {
 
   db.ref('messages/'+currentId).push(msg).then(() => {
     if (status === 'pending') notifyPending(msg, c);
+    if (status === 'forwarded' && forwardTo === 'both') {
+      // Notify both factory and student
+      const c2 = casesData[currentId] || {};
+      const fe = FACTORY_EMAILS[c2.factory] || '';
+      if (fe) sendNotification(fe, msg.senderLabel, c2.designName, c2.studentName, msg.text || '（画像）');
+      if (c2.studentEmail) sendNotification(c2.studentEmail, msg.senderLabel, c2.designName, c2.studentName, msg.text || '（画像）');
+    }
   });
 }
 
