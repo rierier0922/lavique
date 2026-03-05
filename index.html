@@ -164,8 +164,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
   <div class="login-box">
     <div class="login-title">Lavique</div>
     <div class="login-sub">転写紙 制作管理システム</div>
-    <button class="role-btn" onclick="showPW('admin')"><span class="role-icon">👑</span><div><div>管理者</div><div class="role-desc">全案件・承認・転送</div></div></button>
-    <button class="role-btn" onclick="showPW('goto')"><span class="role-icon">🎨</span><div><div>後藤愛</div><div class="role-desc">全案件・メッセージ確認</div></div></button>
+    <button class="role-btn" onclick="showPW('admin')"><span class="role-icon">👑</span><div><div>管理者１</div><div class="role-desc">全案件・承認・転送</div></div></button>
+    <button class="role-btn" onclick="showPW('goto')"><span class="role-icon">🎨</span><div><div>管理者２</div><div class="role-desc">全案件・メッセージ確認</div></div></button>
     <button class="role-btn" onclick="showPW('factory_ena')"><span class="role-icon">🏭</span><div><div>工場：恵那シルク</div><div class="role-desc">担当案件の確認・連絡</div></div></button>
     <button class="role-btn" onclick="showPW('factory_shouwa')"><span class="role-icon">🏭</span><div><div>工場：昭和転写</div><div class="role-desc">担当案件の確認・連絡</div></div></button>
   </div>
@@ -512,7 +512,7 @@ async function sendImage(inputId) {
 // ═══════════════════════════════════════════
 function showPW(r) {
   pendingRole = r;
-  const labels = {admin:'管理者', goto:'後藤愛', factory_ena:'工場：恵那シルク', factory_shouwa:'工場：昭和転写'};
+  const labels = {admin:'管理者１', goto:'管理者２', factory_ena:'工場：恵那シルク', factory_shouwa:'工場：昭和転写'};
   document.getElementById('pwTitle').textContent = labels[r] + ' — パスワード';
   document.getElementById('pwInput').value = '';
   document.getElementById('pwErr').classList.add('hidden');
@@ -543,7 +543,7 @@ function showApp(appId) {
 function doLogin(r) {
   role = r;
   if (isAdmin()) {
-    document.getElementById('mgrTag').textContent = r === 'admin' ? '管理者' : '後藤愛';
+    document.getElementById('mgrTag').textContent = r === 'admin' ? '管理者１' : '管理者２';
     if (r === 'admin') document.getElementById('fabBtn').classList.remove('hidden');
     else document.getElementById('fabBtn').classList.add('hidden');
     showApp('managerApp');
@@ -797,6 +797,8 @@ function renderFctDet(c) {
     <div class="igrid">
       <div class="ibox"><div class="ilbl">仕様</div><div class="ival">${c.spec||'—'}</div></div>
       <div class="ibox"><div class="ilbl">ステータス</div><div class="ival">${c.status}</div></div>
+      ${c.studentTel  ? `<div class="ibox"><div class="ilbl">電話番号</div><div class="ival"><a href="tel:${c.studentTel}" style="color:var(--blue)">${c.studentTel}</a></div></div>` : ''}
+      ${c.studentAddr ? `<div class="ibox" style="grid-column:span 2"><div class="ilbl">住所</div><div class="ival">${c.studentAddr}</div></div>` : ''}
     </div>
     ${c.note?`<div style="font-size:12px;color:var(--ink-light);padding:6px 8px;background:#f9f8ff;border-radius:8px;line-height:1.8">${linkify(c.note)}</div>`:''}`;
   document.getElementById('fctFlow').innerHTML = ST.map(s=>{
@@ -1150,7 +1152,7 @@ async function sendAll(prefix) {
 function submitMsg(prefix, text, imageUrl) {
   if (!currentId) return;
   const c  = casesData[currentId] || {};
-  const sl = role==='admin'?'Rie':role==='goto'?'後藤愛':role==='factory_ena'?'恵那シルク':role==='factory_shouwa'?'昭和転写':c.studentName||'生徒';
+  const sl = role==='admin'?'管理者１':role==='goto'?'管理者２':role==='factory_ena'?'恵那シルク':role==='factory_shouwa'?'昭和転写':c.studentName||'生徒';
 
   let status, forwardTo;
   if (isAdmin()) {
