@@ -3,1293 +3,1637 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lavique 委託販売管理</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<title>Lavique 転写紙管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <style>
-:root {
-  --cream: #faf8f5; --warm-white: #fff9f5; --blush: #e8d5c8; --rose: #c9a090;
-  --deep-rose: #a0695a; --mauve: #7d5a6a; --deep: #3d2b35; --text: #2c1f26;
-  --muted: #8a7070; --border: #e0cfc8; --light-border: #efe6e0; --accent: #c9847a;
-  --success: #7aaa8a; --warning: #d4a85a;
-  --shadow: 0 2px 12px rgba(61,43,53,0.08); --shadow-lg: 0 8px 32px rgba(61,43,53,0.12);
+:root{
+  --pink:#c9768a;--pink-l:#ffc0cb;--pink-bg:#fff0f3;
+  --ink:#1a1625;--ink-mid:#3d3650;--ink-light:#7c7490;
+  --border:#e8e3f5;--bg:#f7f5ff;
+  --red:#dc2626;--green:#059669;--gold:#d97706;--blue:#3b82f6;
+  --shadow:0 2px 16px rgba(50,40,90,0.10);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Noto Sans JP', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
-.app-header { background: var(--deep); color: white; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 16px rgba(0,0,0,0.2); }
-.app-header h1 { font-family: 'Noto Serif JP', serif; font-size: 18px; font-weight: 500; letter-spacing: 0.05em; }
-.app-header .subtitle { font-size: 11px; color: var(--blush); margin-top: 2px; letter-spacing: 0.08em; }
-.tabs { background: white; border-bottom: 1px solid var(--border); display: flex; padding: 0 32px; box-shadow: var(--shadow); overflow-x: auto; }
-.tab { padding: 16px 22px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap; }
-.tab:hover { color: var(--deep-rose); }
-.tab.active { color: var(--deep-rose); border-bottom-color: var(--accent); }
-.main { padding: 28px 32px; max-width: 1200px; margin: 0 auto; }
-.panel { display: none; }
-.panel.active { display: block; }
-.card { background: white; border-radius: 12px; border: 1px solid var(--light-border); box-shadow: var(--shadow); padding: 24px 28px; margin-bottom: 20px; }
-.card-title { font-family: 'Noto Serif JP', serif; font-size: 15px; font-weight: 500; color: var(--deep); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--light-border); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 14px; }
-.form-group { display: flex; flex-direction: column; gap: 5px; }
-.form-group label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-.form-group input, .form-group select { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; color: var(--text); background: var(--warm-white); transition: all 0.2s; outline: none; }
-.form-group input:focus, .form-group select:focus { border-color: var(--rose); box-shadow: 0 0 0 3px rgba(201,160,144,0.15); }
-.btn { padding: 9px 18px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-.btn-primary { background: var(--deep-rose); color: white; }
-.btn-primary:hover { background: var(--mauve); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(160,105,90,0.3); }
-.btn-secondary { background: var(--blush); color: var(--deep); }
-.btn-secondary:hover { background: var(--rose); color: white; }
-.btn-success { background: var(--success); color: white; }
-.btn-success:hover { background: #5a8a6a; }
-.btn-outline { background: transparent; color: var(--deep-rose); border: 1px solid var(--rose); }
-.btn-outline:hover { background: var(--blush); }
-.btn-danger { background: transparent; color: #c0605a; border: 1px solid #e0a09a; padding: 5px 10px; font-size: 12px; }
-.btn-danger:hover { background: #fff0ee; }
-.btn-sm { padding: 5px 12px; font-size: 12px; }
-.table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--light-border); }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-thead th { background: var(--deep); color: white; padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; white-space: nowrap; }
-thead th.sort { cursor: pointer; user-select: none; }
-thead th.sort:hover { background: var(--mauve); }
-tbody tr { border-bottom: 1px solid var(--light-border); transition: background 0.15s; }
-tbody tr:hover { background: #fdf5f0; }
-tbody tr:last-child { border-bottom: none; }
-tbody td { padding: 11px 14px; }
-td.num { text-align: right; font-variant-numeric: tabular-nums; }
-tfoot td { padding: 11px 14px; background: var(--blush); font-weight: 600; border-top: 2px solid var(--rose); }
-tfoot td.num { text-align: right; }
-.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
-.badge-vendor { background: var(--blush); color: var(--mauve); }
-.badge-full { background: #e0f0e8; color: #3a7a5a; }
-.badge-seller { background: #fff3e0; color: #a06020; }
-.badge-none { background: #f5e8e0; color: #8a4040; }
-.upload-area { border: 2px dashed var(--rose); border-radius: 12px; padding: 36px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--warm-white); }
-.upload-area:hover, .upload-area.drag-over { border-color: var(--deep-rose); background: #fff0eb; }
-.upload-icon { font-size: 40px; margin-bottom: 10px; }
-.upload-area p { color: var(--muted); font-size: 13px; line-height: 1.8; }
-.upload-area strong { color: var(--deep-rose); }
-#csv-file-input { display: none; }
-.summary-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 20px; }
-.summary-card { background: white; border: 1px solid var(--light-border); border-radius: 10px; padding: 14px 18px; text-align: center; }
-.sc-label { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
-.sc-value { font-size: 20px; font-weight: 600; color: var(--deep); font-variant-numeric: tabular-nums; }
-.sc-value.accent { color: var(--deep-rose); }
-.sc-value.sm { font-size: 13px; font-weight: 500; }
-.empty { text-align: center; padding: 48px 20px; color: var(--muted); }
-.empty .ei { font-size: 44px; margin-bottom: 12px; }
-.empty p { font-size: 13px; line-height: 2; }
-.month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
-.month-card { background: white; border: 2px solid var(--light-border); border-radius: 10px; padding: 16px 18px; cursor: pointer; transition: all 0.2s; position: relative; }
-.month-card:hover { border-color: var(--rose); transform: translateY(-2px); box-shadow: var(--shadow); }
-.month-card.selected { border-color: var(--deep-rose); background: #fff8f5; }
-.mc-label { font-family: 'Noto Serif JP', serif; font-size: 16px; font-weight: 600; color: var(--deep); margin-bottom: 6px; }
-.mc-meta { font-size: 11px; color: var(--muted); line-height: 1.9; }
-.mc-del { position: absolute; top: 10px; right: 10px; background: none; border: none; cursor: pointer; font-size: 16px; color: var(--muted); transition: color 0.2s; padding: 2px; }
-.mc-del:hover { color: #c05050; }
-.seller-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
-.seller-card { background: white; border: 2px solid var(--light-border); border-radius: 10px; padding: 16px 18px; cursor: pointer; transition: all 0.2s; }
-.seller-card:hover { border-color: var(--rose); transform: translateY(-2px); box-shadow: var(--shadow); }
-.sc-name { font-weight: 600; font-size: 15px; color: var(--deep); margin-bottom: 6px; }
-.sc-info { font-size: 11px; color: var(--muted); line-height: 1.9; }
-.url-link { font-size: 11px; color: var(--deep-rose); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
-.url-link:hover { text-decoration: underline; }
-.toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-.toolbar select, .toolbar input[type=text] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; color: var(--text); background: white; outline: none; }
-.toolbar select:focus, .toolbar input:focus { border-color: var(--rose); }
-.toast { position: fixed; bottom: 28px; right: 28px; background: var(--deep); color: white; padding: 12px 18px; border-radius: 10px; font-size: 13px; box-shadow: var(--shadow-lg); z-index: 9999; transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); max-width: 300px; }
-.toast.show { transform: translateY(0); opacity: 1; }
-.toast.ok { border-left: 4px solid var(--success); }
-.toast.err { border-left: 4px solid #e07070; }
-#product-card { border-left: 3px solid var(--accent); }
-.modal-overlay { position:fixed; inset:0; background:rgba(61,43,53,0.45); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; }
-.modal { background:white; border-radius:16px; box-shadow:var(--shadow-lg); width:100%; max-width:680px; max-height:90vh; overflow-y:auto; }
-.modal-header { padding:20px 24px 16px; border-bottom:1px solid var(--light-border); display:flex; align-items:center; justify-content:space-between; }
-.modal-header h2 { font-family:'Noto Serif JP',serif; font-size:16px; font-weight:500; color:var(--deep); }
-.modal-close { background:none; border:none; cursor:pointer; font-size:22px; color:var(--muted); line-height:1; }
-.modal-close:hover { color:var(--deep); }
-.modal-body { padding:24px; }
-.modal-footer { padding:16px 24px; border-top:1px solid var(--light-border); display:flex; justify-content:flex-end; gap:10px; }
-.p-edit-row { display:flex; gap:8px; align-items:center; padding:8px 14px; background:#fff8f5; border-bottom:1px solid var(--light-border); }
-.p-edit-row input { padding:6px 10px; border:1px solid var(--rose); border-radius:6px; font-size:13px; font-family:'Noto Sans JP',sans-serif; outline:none; }
-.p-edit-row input:focus { box-shadow:0 0 0 2px rgba(201,160,144,0.2); }
-/* 精算書プレビュー（画像生成用の非表示DOM） */
-#settlement-preview-area { position:fixed; left:-9999px; top:0; width:680px; background:white; font-family:'Noto Sans JP',sans-serif; padding:40px; box-sizing:border-box; }
-.sp-title { font-size:20px; font-weight:700; color:#3d2b35; text-align:center; margin-bottom:8px; }
-.sp-divider { border:none; border-top:2px solid #c9a090; margin-bottom:16px; }
-.sp-meta { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; font-size:12px; }
-.sp-meta-left .recipient { font-size:16px; font-weight:700; color:#3d2b35; }
-.sp-meta-right { text-align:right; color:#7a5a5a; line-height:1.8; }
-.sp-period { background:#faf8f5; border:1px solid #e8d5c8; border-radius:6px; padding:8px 14px; font-size:12px; margin-bottom:16px; }
-.sp-period strong { color:#a0695a; }
-.sp-table { width:100%; border-collapse:collapse; font-size:12px; margin-bottom:16px; }
-.sp-table thead th { background:#3d2b35; color:white; padding:8px 12px; text-align:left; }
-.sp-table thead th:not(:first-child) { text-align:right; }
-.sp-table tbody td { padding:7px 12px; border-bottom:1px solid #efe6e0; }
-.sp-table tbody td:not(:first-child) { text-align:right; }
-.sp-table tbody tr.zero td { color:#aaa; background:#f8f5f3; }
-.sp-table tfoot td { padding:8px 12px; background:#e8d5c8; font-weight:700; border-top:2px solid #c9a090; }
-.sp-table tfoot td:not(:first-child) { text-align:right; }
-.sp-calc { width:100%; border-collapse:collapse; font-size:12px; margin-bottom:16px; }
-.sp-calc td { padding:7px 12px; border-bottom:1px solid #efe6e0; }
-.sp-calc td:last-child { text-align:right; font-weight:600; }
-.sp-calc tr.final td { background:#fff0eb; color:#a0695a; font-size:14px; font-weight:700; }
-.sp-notes { font-size:10px; color:#7a5a5a; line-height:1.9; margin-bottom:12px; }
-.sp-check { font-size:12px; line-height:2.2; margin-bottom:12px; }
-.sp-bank { font-size:11px; color:#5a3a40; background:#faf8f5; border:1px solid #e8d5c8; border-radius:6px; padding:8px 14px; margin-bottom:12px; }
-.sp-footer { display:flex; justify-content:flex-end; font-size:10px; color:#aaa; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+.hidden{display:none!important;}
+
+/* ── LOGIN ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#1a1625,#c9768a);padding:24px;}
+.login-box{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);backdrop-filter:blur(20px);border-radius:24px;padding:36px 28px;width:100%;max-width:380px;}
+.login-title{font-family:'DM Serif Display',serif;font-size:28px;color:#fff;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:11px;color:#a5b4fc;letter-spacing:.15em;text-align:center;margin-bottom:28px;}
+.role-btn{width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:all .2s;}
+.role-btn:hover{background:rgba(255,255,255,0.16);}
+.role-icon{font-size:20px;}
+.role-desc{font-size:11px;opacity:.6;font-weight:400;margin-top:1px;}
+
+/* ── OVERLAY / MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px;}
+.modal{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:340px;}
+.mbot{background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;position:fixed;bottom:0;left:50%;transform:translateX(-50%);}
+
+/* ── COMMON ── */
+.inp{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:10px;outline:none;transition:border-color .15s;}
+.inp:focus{border-color:var(--pink);}
+.btn{width:100%;padding:11px;border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:8px;}
+.btn-p{background:var(--pink);color:#fff;}
+.btn-g{background:#f3f4f6;color:var(--ink-mid);border:1.5px solid var(--border);}
+.err{color:var(--red);font-size:12px;margin-bottom:8px;text-align:center;}
+.flabel{font-size:12px;font-weight:700;color:var(--ink-mid);margin-bottom:4px;display:block;}
+
+/* ── APP ── */
+.app{display:none;min-height:100vh;flex-direction:column;}
+.app.active{display:flex;}
+.hdr{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.ha{background:linear-gradient(135deg,#c9768a,#e8a0ad);}
+.hf{background:linear-gradient(135deg,#7c2d12,#c2410c);}
+.hs{background:linear-gradient(135deg,#0f172a,#334155);}
+.hl-{display:flex;align-items:center;gap:10px;}
+.hr-{display:flex;gap:8px;align-items:center;}
+.logo{font-family:'DM Serif Display',serif;font-size:20px;color:#fff;}
+.rtag{background:rgba(255,255,255,0.2);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;}
+.lbtn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.fab{background:linear-gradient(135deg,#e8a0ad,#c9768a);border:none;color:#fff;width:48px;height:48px;border-radius:50%;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(201,118,138,.4);display:flex;align-items:center;justify-content:center;position:fixed;bottom:20px;right:20px;z-index:50;}
+
+/* ── LIST ── */
+.list-body{flex:1;overflow-y:auto;padding:16px;}
+.stats-row{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;}
+.stat{background:#fff;border-radius:12px;padding:12px 16px;min-width:72px;text-align:center;box-shadow:var(--shadow);}
+.stat-n{font-size:22px;font-weight:900;}
+.stat-l{font-size:10px;color:var(--ink-light);margin-top:2px;}
+.pay-bar{background:#fef3c7;border:1.5px solid #fcd34d;border-radius:14px;padding:12px 16px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;}
+.pay-det{background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden;}
+.prow{display:flex;justify-content:space-between;padding:9px 16px;border-bottom:1px solid var(--border);font-size:13px;}
+.ptot{background:#fef3c7;padding:12px 16px;display:flex;justify-content:space-between;}
+.filters{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;}
+.fil{background:#fff;border:1.5px solid var(--border);border-radius:99px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;}
+.fil.on{background:var(--pink);color:#fff;border-color:var(--pink);}
+.ccard{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.ccard:hover{box-shadow:0 4px 20px rgba(201,118,138,.2);}
+.ctitle{font-size:14px;font-weight:800;}
+.csub{font-size:12px;color:var(--ink-light);margin-top:2px;}
+.cright{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.cfct{font-size:11px;color:var(--ink-light);}
+.cbadge{padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;border:1.5px solid;}
+.cdot{width:8px;height:8px;border-radius:50%;background:#e2e8f0;flex-shrink:0;}
+.cdot.unread{background:var(--pink);}
+
+/* ── DETAIL ── */
+.det-body{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.back-bar{padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.back-btn{background:none;border:none;font-size:14px;font-weight:700;color:var(--pink);cursor:pointer;font-family:inherit;padding:0;}
+.det-info{padding:14px 16px;background:#fff;border-bottom:1px solid var(--border);}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.ibox{background:#f9f8ff;border-radius:10px;padding:10px 12px;}
+.ilbl{font-size:10px;color:var(--ink-light);margin-bottom:3px;}
+.ival{font-size:14px;font-weight:700;}
+.agrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;}
+.abox{background:#f9f8ff;border-radius:10px;padding:10px 12px;}
+
+/* ── FLOW ── */
+.sflow{display:flex;gap:4px;overflow-x:auto;padding:10px 16px;background:#fff;border-bottom:1px solid var(--border);}
+.step{padding:5px 10px;border-radius:99px;font-size:11px;font-weight:700;border:1.5px solid;white-space:nowrap;cursor:pointer;}
+
+/* ── MESSAGES ── */
+.msgs{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;}
+
+/* pending message card (admin only) */
+.pending-card{background:#fffbeb;border:2px solid #fcd34d;border-radius:14px;padding:12px 14px;margin-bottom:4px;}
+.pending-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.pending-tag{background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;}
+.pending-from{font-size:12px;color:var(--ink-light);}
+.pending-body{font-size:13px;line-height:1.5;margin-bottom:10px;}
+.pending-img{max-width:180px;border-radius:8px;margin-bottom:10px;display:block;}
+.pending-edit{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:8px;outline:none;resize:none;}
+.pending-edit:focus{border-color:var(--pink);}
+.fwd-row{display:flex;gap:8px;}
+.fwd-btn{flex:1;padding:8px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.fwd-to-stu{background:#dbeafe;color:#1d4ed8;}
+.fwd-to-fct{background:#dcfce7;color:#166534;}
+.del-msg-btn{padding:8px 12px;border:1.5px solid #fca5a5;background:#fff0f0;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;color:var(--red);font-family:inherit;}
+
+/* forwarded / normal message bubble */
+.mwrap{display:flex;flex-direction:column;max-width:82%;}
+.mwrap.me{align-self:flex-end;align-items:flex-end;}
+.mwrap.them{align-self:flex-start;}
+.mlbl{font-size:10px;color:var(--ink-light);margin-bottom:3px;}
+.mbubble{padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5;}
+.mbubble.me{background:var(--pink);color:#fff;border-radius:14px 14px 4px 14px;}
+.mbubble.them{background:#fff;border-radius:14px 14px 14px 4px;box-shadow:var(--shadow);}
+.mtime{font-size:10px;color:var(--ink-light);margin-top:3px;}
+.mimg{max-width:200px;border-radius:10px;cursor:pointer;}
+
+/* ── INPUT AREA ── */
+.adva{padding:10px 16px;background:#fff;border-top:1px solid var(--border);}
+.est-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.est-inp{width:120px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;}
+.est-inp:focus{border-color:var(--pink);}
+.est-btn{padding:8px 16px;background:var(--pink);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.mia{padding:12px 16px;background:#fff;border-top:1px solid var(--border);}
+.mrow{display:flex;gap:8px;align-items:flex-end;margin-bottom:8px;}
+.mta{flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;font-size:13px;font-family:inherit;resize:none;outline:none;}
+.mta:focus{border-color:var(--pink);}
+.sbtn{padding:10px 16px;background:var(--pink);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.file-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.file-lbl{font-size:12px;color:var(--ink-light);}
+.notice{padding:10px 14px;border-radius:10px;font-size:12px;margin:8px 0;}
+.no{background:#fef2f2;color:#991b1b;}
+.del-btn{width:100%;padding:9px;background:#fff0f0;border:1.5px solid #fca5a5;border-radius:10px;color:var(--red);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;}
+.url-area{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:10px;}
+.url-text{font-size:12px;word-break:break-all;color:#065f46;margin-bottom:8px;}
+.date-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.date-box{background:#f9f8ff;border-radius:10px;padding:8px 10px;}
+.date-lbl{font-size:10px;color:var(--ink-light);margin-bottom:4px;}
+.date-val{font-size:13px;font-weight:700;color:var(--ink);}
+.date-inp-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.date-inp-box{background:#f9f8ff;border-radius:10px;padding:8px 10px;}
+.date-inp-lbl{font-size:10px;color:var(--ink-light);margin-bottom:4px;}
+.date-inp{width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit;outline:none;background:#fff;}
+.date-inp:focus{border-color:var(--pink);}
+.cpbtn{width:100%;padding:10px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:8px;}
+#registerScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#1a1625,#c9768a);padding:24px;}
 </style>
 </head>
 <body>
-<div class="app-header">
-  <div>
-    <h1>🌸 Lavique 委託販売管理システム</h1>
-    <div class="subtitle">EC SHOP CONSIGNMENT MANAGEMENT</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px">
-    <button class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);font-size:12px" onclick="exportBackup()">💾 バックアップ</button>
-    <label class="btn btn-sm" style="background:rgba(255,255,255,0.1);color:var(--blush);border:1px solid rgba(255,255,255,0.2);font-size:12px;cursor:pointer">
-      📂 復元
-      <input type="file" accept=".json" onchange="importBackup(this)" style="display:none">
-    </label>
-    <div style="font-size:11px;color:var(--blush);text-align:right">後藤あい / Lavique</div>
-  </div>
-</div>
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('sellers')">👤 販売者管理</div>
-  <div class="tab" onclick="switchTab('import')">📥 CSV取込</div>
-  <div class="tab" onclick="switchTab('sales')">📊 月次集計</div>
-  <div class="tab" onclick="switchTab('settlement')">📄 精算書発行</div>
-</div>
-<div class="main">
 
-<!-- 販売者管理 -->
-<div class="panel active" id="panel-sellers">
-  <div class="card">
-    <div class="card-title">➕ 販売者を登録</div>
-    <div class="form-row">
-      <div class="form-group"><label>販売者名</label><input id="s-name" placeholder="例：河崎友美"></div>
-      <div class="form-group"><label>ShopifyベンダーID（任意・補助照合用）</label><input id="s-vendor" placeholder="例：papillon room"></div>
-      <div class="form-group"><label>メールアドレス</label><input id="s-email" type="email" placeholder="example@email.com"></div>
-      <div class="form-group"><label>電話番号</label><input id="s-phone" placeholder="090-0000-0000"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group" style="grid-column:span 2"><label>住所</label><input id="s-address" placeholder="例：東京都渋谷区..."></div>
-      <div class="form-group" style="grid-column:span 2"><label>精算スプレッドシートURL</label><input id="s-sheeturl" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." style="font-size:12px"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>振込先銀行名</label><input id="s-bank" placeholder="◯◯銀行 △△支店"></div>
-      <div class="form-group"><label>口座種別</label><select id="s-banktype"><option>普通</option><option>当座</option></select></div>
-      <div class="form-group"><label>口座番号</label><input id="s-banknum" placeholder="1234567"></div>
-      <div class="form-group"><label>口座名義（カナ）</label><input id="s-bankname" placeholder="カワサキトモミ"></div>
-    </div>
-    <button class="btn btn-primary" onclick="saveSeller()">＋ 登録する</button>
-  </div>
-  <div class="card">
-    <div class="card-title">👥 登録済み販売者 <span id="s-count" style="margin-left:auto;font-size:12px;font-weight:400;color:var(--muted)"></span></div>
-    <div id="sellers-list"></div>
-  </div>
-  <div class="card" id="product-card" style="display:none">
-    <div class="card-title">🛍 商品登録 — <span id="p-seller-name" style="color:var(--deep-rose)"></span>
-      <button onclick="closeProducts()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted)">✕</button>
-    </div>
-    <div class="form-row" style="max-width:560px">
-      <div class="form-group" style="flex:2"><label>商品名（Shopify内の名前と完全一致）</label><input id="p-name" placeholder="例：Dream Bear Garden"></div>
-      <div class="form-group"><label>単価（円）</label><input id="p-price" type="number" placeholder="1540" min="0"></div>
-      <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn btn-primary" onclick="addProduct()">＋ 追加</button></div>
-    </div>
-    <div id="product-list"></div>
+<!-- LOGIN -->
+<div id="loginScreen" class="login-wrap">
+  <div class="login-box">
+    <div class="login-title">Lavique</div>
+    <div class="login-sub">転写紙 制作管理システム</div>
+    <button class="role-btn" onclick="showPW('admin')"><span class="role-icon">👑</span><div><div>管理者１</div><div class="role-desc">全案件・承認・転送</div></div></button>
+    <button class="role-btn" onclick="showPW('goto')"><span class="role-icon">🎨</span><div><div>管理者２</div><div class="role-desc">全案件・メッセージ確認</div></div></button>
+    <button class="role-btn" onclick="showPW('factory_ena')"><span class="role-icon">🏭</span><div><div>工場：恵那シルク</div><div class="role-desc">担当案件の確認・連絡</div></div></button>
+    <button class="role-btn" onclick="showPW('factory_shouwa')"><span class="role-icon">🏭</span><div><div>工場：昭和転写</div><div class="role-desc">担当案件の確認・連絡</div></div></button>
   </div>
 </div>
 
-<!-- CSV取込 -->
-<div class="panel" id="panel-import">
-  <div class="card">
-    <div class="card-title">📥 ShopifyエクスポートCSVを取り込む</div>
-    <div class="upload-area" id="drop-zone" onclick="document.getElementById('csv-file-input').click()">
-      <div class="upload-icon">📂</div>
-      <p><strong>クリックしてCSVを選択</strong>、またはドラッグ＆ドロップ</p>
-      <p>Shopify管理画面 → 注文 → エクスポート で取得したCSVファイル</p>
-    </div>
-    <input type="file" id="csv-file-input" accept=".csv" onchange="handleCSV(this)">
-  </div>
-  <div class="card" id="import-result" style="display:none">
-    <div class="card-title">✅ 取込プレビュー</div>
-    <div id="import-body"></div>
-  </div>
-</div>
-
-<!-- 月次集計 -->
-<div class="panel" id="panel-sales">
-  <div class="card">
-    <div class="card-title">🗓 保存済み月次データ</div>
-    <div id="month-grid"></div>
-  </div>
-  <div id="month-detail" style="display:none">
-    <div class="summary-bar" id="detail-summary"></div>
-    <div class="card">
-      <div class="card-title">
-        📋 <span id="detail-label"></span>
-        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-          <select id="filter-vendor" onchange="renderDetailTable()" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none"></select>
-          <input type="text" id="filter-q" oninput="renderDetailTable()" placeholder="🔍 商品名検索..." style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;min-width:160px">
-          <button class="btn btn-secondary btn-sm" onclick="exportCSV()">⬇ CSV出力</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th class="sort" onclick="doSort('vendor')">販売者</th>
-            <th class="sort" onclick="doSort('name')">商品名</th>
-            <th style="text-align:center">照合</th>
-            <th class="sort" onclick="doSort('qty')" style="text-align:right">販売数</th>
-            <th class="sort" onclick="doSort('price')" style="text-align:right">単価</th>
-            <th class="sort" onclick="doSort('revenue')" style="text-align:right">売上合計</th>
-            <th style="text-align:right">手数料(20%)</th>
-            <th class="sort" onclick="doSort('payout')" style="text-align:right">支払い金額</th>
-            <th style="width:40px"></th>
-          </tr></thead>
-          <tbody id="detail-tbody"></tbody>
-          <tfoot id="detail-tfoot"></tfoot>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 精算書発行 -->
-<div class="panel" id="panel-settlement">
-  <div class="card">
-    <div class="card-title">🗓 精算対象月を選択
-      <select id="stl-month" onchange="renderStlSellers()" style="margin-left:16px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
-        <option value="">— 月を選択 —</option>
-      </select>
-    </div>
-    <div id="stl-sellers">
-      <div class="empty"><p>月を選択すると販売者カードが表示されます</p></div>
-    </div>
-  </div>
-</div>
-
-</div><!-- /main -->
-
-<!-- 精算書画像生成用 非表示エリア -->
-<div id="settlement-preview-area"></div>
-
-<!-- 販売者編集モーダル -->
-<div class="modal-overlay" id="edit-modal" style="display:none" onclick="if(event.target===this)closeEditModal()">
+<!-- PW MODAL -->
+<div id="pwModal" class="overlay hidden">
   <div class="modal">
-    <div class="modal-header">
-      <h2>✏️ 販売者情報を編集</h2>
-      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    <div style="font-size:15px;font-weight:800;margin-bottom:14px" id="pwTitle">パスワード</div>
+    <input id="pwInput" class="inp" type="password" placeholder="パスワードを入力" onkeydown="if(event.key==='Enter')checkPW()">
+    <div id="pwErr" class="err hidden">パスワードが違います</div>
+    <button class="btn btn-p" onclick="checkPW()" style="margin-top:4px">ログイン</button>
+    <button class="btn btn-g" onclick="closePW()">キャンセル</button>
+  </div>
+</div>
+
+<!-- MANAGER APP -->
+<div id="managerApp" class="app" style="display:none">
+  <div class="hdr ha">
+    <div class="hl-"><span class="logo">Lavique</span><span id="mgrTag" class="rtag">管理者</span></div>
+    <div class="hr-"><button class="lbtn" onclick="goHome()">🏠 ホーム</button><button class="lbtn" onclick="logout()">ログアウト</button></div>
+  </div>
+  <div id="mgrList" class="list-body">
+    <div class="stats-row" id="mgrStats"></div>
+    <div class="pay-bar" onclick="togglePay()">
+      <div><div style="font-size:13px;font-weight:700;color:#92400e">💰 月末工場支払い</div><div style="font-size:10px;color:#a16207">タップで詳細</div></div>
+      <div style="font-size:18px;font-weight:900;color:#92400e" id="payTotal">¥0</div>
     </div>
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group"><label>販売者名</label><input id="e-name" placeholder="例：河崎友美"></div>
-        <div class="form-group"><label>ShopifyベンダーID（Vendor列）</label><input id="e-vendor" placeholder="例：papillon room"></div>
-        <div class="form-group"><label>メールアドレス</label><input id="e-email" type="email"></div>
-        <div class="form-group"><label>電話番号</label><input id="e-phone"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group" style="grid-column:span 2"><label>住所</label><input id="e-address"></div>
-        <div class="form-group" style="grid-column:span 2"><label>精算スプレッドシートURL</label><input id="e-sheeturl" type="url" style="font-size:12px"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>振込先銀行名</label><input id="e-bank"></div>
-        <div class="form-group"><label>口座種別</label><select id="e-banktype"><option>普通</option><option>当座</option></select></div>
-        <div class="form-group"><label>口座番号</label><input id="e-banknum"></div>
-        <div class="form-group"><label>口座名義（カナ）</label><input id="e-bankname"></div>
+    <div id="payDet" class="pay-det hidden"></div>
+    <div class="filters" id="mgrFilters"></div>
+    <div id="csvPanel" style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:12px 14px;margin:8px 0">
+      <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:8px">📊 CSV出力（見積日ベース）</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end">
+        <div>
+          <div style="font-size:10px;color:#166534;margin-bottom:3px">開始日</div>
+          <input type="date" id="csvFrom" style="width:100%;border:1.5px solid #bbf7d0;border-radius:8px;padding:6px 8px;font-size:13px;font-family:inherit;outline:none">
+        </div>
+        <div>
+          <div style="font-size:10px;color:#166534;margin-bottom:3px">終了日</div>
+          <input type="date" id="csvTo" style="width:100%;border:1.5px solid #bbf7d0;border-radius:8px;padding:6px 8px;font-size:13px;font-family:inherit;outline:none">
+        </div>
+        <button onclick="downloadCsv()" style="padding:7px 16px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">⬇ DL</button>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeEditModal()">キャンセル</button>
-      <button class="btn btn-primary" onclick="saveEditSeller()">💾 保存する</button>
+    <div id="mgrCases"></div>
+  </div>
+  <div id="mgrDet" class="det-body hidden">
+    <div class="back-bar">
+      <button class="back-btn" onclick="backToList('mgr')">← 案件一覧</button>
+    </div>
+    <div class="det-info" id="mgrInfo"></div>
+    <div class="sflow" id="mgrFlow"></div>
+    <div class="msgs" id="mgrMsgs"></div>
+    <div class="adva" id="mgrAdv"></div>
+    <div class="mia" id="mgrIn"></div>
+  </div>
+  <button class="fab hidden" id="fabBtn" onclick="openAdd()">＋</button>
+</div>
+
+<!-- FACTORY APP -->
+<div id="factoryApp" class="app" style="display:none">
+  <div class="hdr hf">
+    <div class="hl-"><span class="logo">Lavique</span><span id="fctTag" class="rtag">工場</span></div>
+    <div class="hr-"><button class="lbtn" onclick="goHome()">🏠 ホーム</button><button class="lbtn" onclick="logout()">ログアウト</button></div>
+  </div>
+  <div id="fctList" class="list-body">
+    <div class="filters" id="fctFilters"></div>
+    <div id="fctCases"></div>
+  </div>
+  <div id="fctDet" class="det-body hidden">
+    <div class="back-bar">
+      <button class="back-btn" onclick="backToList('fct')">← 案件一覧</button>
+    </div>
+    <div class="det-info" id="fctInfo"></div>
+    <div class="sflow" id="fctFlow"></div>
+    <div class="msgs" id="fctMsgs"></div>
+    <div class="mia" id="fctIn"></div>
+  </div>
+</div>
+
+<!-- REGISTRATION FORM -->
+<div id="registerScreen" class="login-wrap hidden">
+  <div style="background:#fff;border-radius:24px;padding:32px 24px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto">
+    <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--pink);text-align:center;margin-bottom:4px">Lavique</div>
+    <div style="font-size:12px;color:var(--ink-light);text-align:center;margin-bottom:24px">転写紙 制作お申込みフォーム</div>
+    <div id="regForm">
+      <label class="flabel">メールアドレス *</label>
+      <input id="rf_email" class="inp" type="email" placeholder="例：hanako@gmail.com">
+      <label class="flabel">【講座生名】本名で記入 *</label>
+      <input id="rf_name" class="inp" placeholder="例：山田 花子">
+      <label class="flabel">【住所】郵便番号から *</label>
+      <input id="rf_addr" class="inp" placeholder="例：〒530-0001 大阪府大阪市...">
+      <label class="flabel">【電話番号】 *</label>
+      <input id="rf_tel" class="inp" type="tel" placeholder="例：090-1234-5678">
+      <label class="flabel">【入稿先工場】 *</label>
+      <select id="rf_factory" class="inp">
+        <option value="">選択してください</option>
+        <option value="恵那シルク">恵那シルク</option>
+        <option value="昭和転写">昭和転写</option>
+      </select>
+      <label class="flabel">【転写紙タイトル】工場入稿する際の総称 *</label>
+      <input id="rf_design" class="inp" placeholder="例：Loveモンスター">
+      <label class="flabel">【入稿形式】推奨：AI *</label>
+      <select id="rf_format" class="inp">
+        <option>AI</option>
+        <option>PDF</option>
+      </select>
+      <label class="flabel">【データ】配置見本＋素材をUPしたGIGAファイルURLを記載 *</label>
+      <input id="rf_data" class="inp" placeholder="例：https://gigafile.nu/...">
+      <label class="flabel">【サイズ】推奨：A4二面付けでA3 *</label>
+      <select id="rf_size" class="inp">
+        <option>A4の2面付けA3</option>
+        <option>A4</option>
+        <option>A3</option>
+      </select>
+      <label class="flabel">【両面の柄】 *</label>
+      <select id="rf_pattern" class="inp">
+        <option>同柄</option>
+        <option>別柄</option>
+      </select>
+      <label class="flabel">【希望枚数】 *</label>
+      <select id="rf_qty" class="inp">
+        <option>30</option>
+        <option>50</option>
+        <option>70</option>
+        <option>100</option>
+        <option>sampleのみ</option>
+      </select>
+      <label class="flabel">【合紙】 *</label>
+      <select id="rf_paper" class="inp">
+        <option>あり</option>
+        <option>なし</option>
+      </select>
+      <label class="flabel">【納品時の裁断希望】 *</label>
+      <select id="rf_cut" class="inp">
+        <option>A3→A4カット希望</option>
+        <option>そのまま</option>
+      </select>
+      <label class="flabel">【サンプル希望】 *</label>
+      <select id="rf_sample" class="inp">
+        <option>サンプル希望</option>
+        <option>サンプル不要</option>
+      </select>
+      <label class="flabel">【見積もり返信期限】通常1週間目安</label>
+      <input id="rf_deadline" class="inp" type="date">
+      <label class="flabel">【備考・修正指示】色の調整希望、大きさのcm希望などあれば細かく指示</label>
+      <textarea id="rf_note" class="inp" rows="4" placeholder="ご質問やご要望があればご記入ください"></textarea>
+      <div id="regErr" class="err hidden">必須項目をすべて入力してください</div>
+      <button class="btn btn-p" onclick="submitRegister()" style="margin-top:8px">送信する</button>
+    </div>
+    <div id="regDone" class="hidden" style="text-align:center;padding:20px 0">
+      <div style="font-size:40px;margin-bottom:12px">✅</div>
+      <div style="font-size:16px;font-weight:800;margin-bottom:8px">お申込みありがとうございます</div>
+      <div style="font-size:13px;color:var(--ink-mid);margin-bottom:20px">以下のURLがあなた専用のページです。<br>ブックマークしてご利用ください。</div>
+      <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:16px">
+        <div id="regUrl" style="font-size:12px;color:#065f46;word-break:break-all;margin-bottom:10px"></div>
+        <button class="btn btn-p" onclick="copyRegUrl()" style="margin:0">📋 URLをコピー</button>
+      </div>
+      <div style="font-size:11px;color:var(--ink-light)">このURLはあなただけのものです。大切に保管してください。</div>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast-el"></div>
+<!-- STUDENT APP -->
+<div id="studentApp" class="app" style="display:none">
+  <div class="hdr hs">
+    <div class="hl-"><span class="logo">Lavique</span><span class="rtag" id="stuName">生徒</span></div>
+    <div class="hr-"><button class="lbtn" onclick="window.scrollTo(0,0)">🏠 ホーム</button></div>
+  </div>
+  <div id="stuBody" class="det-body">
+    <div class="det-info" id="stuInfo"></div>
+    <div class="sflow" id="stuFlow"></div>
+    <div class="msgs" id="stuMsgs"></div>
+    <div class="mia" id="stuIn"></div>
+  </div>
+  <div id="stuNF" class="list-body hidden">
+    <div class="notice no" style="margin-top:40px">案件が見つかりません。URLをご確認ください。</div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div id="addModal" class="overlay hidden">
+  <div class="mbot" onclick="event.stopPropagation()">
+    <div style="font-size:17px;font-weight:800;margin-bottom:18px">📋 新規案件登録</div>
+    <label class="flabel">生徒名 *</label>
+    <input id="fs" class="inp" placeholder="例：山田 花子">
+    <label class="flabel">生徒のメールアドレス</label>
+    <input id="fem" class="inp" type="email" placeholder="例：hanako@gmail.com">
+    <label class="flabel">転写紙名 *</label>
+    <input id="fn" class="inp" placeholder="例：花のワルツ">
+    <label class="flabel">仕様</label>
+    <select id="fsp" class="inp"><option>A4を2面付け</option><option>A3</option><option>その他</option></select>
+    <label class="flabel">担当工場</label>
+    <select id="ff" class="inp"><option value="">未定</option><option>恵那シルク</option><option>昭和転写</option></select>
+    <label class="flabel">備考</label>
+    <textarea id="fno" class="inp" rows="2" placeholder="メモがあれば"></textarea>
+    <div id="addErr" class="err hidden">生徒名と転写紙名は必須です</div>
+    <div id="urlArea" class="hidden">
+      <div class="url-area">
+        <div style="font-size:12px;color:#065f46;margin-bottom:6px">✅ 案件を作成しました！このURLを生徒に送ってください。</div>
+        <div id="urlBox" class="url-text"></div>
+        <button class="cpbtn" onclick="copyUrl()">📋 URLをコピー</button>
+      </div>
+    </div>
+    <button id="saveBtn" class="btn btn-p" onclick="saveCase()">案件を作成 → URLを発行</button>
+    <button class="btn btn-g" onclick="closeAdd()">閉じる</button>
+  </div>
+</div>
 
 <script>
-// ===== State =====
-const S = { sellers:[], records:[], payments:{}, curMonthId:null, curProdSeller:null, sortKey:'revenue', sortAsc:false, pendingImport:null };
-// payments 構造: { "monthId_sellerId": true } → 支払い済みフラグ
+// ═══════════════════════════════════════════
+// FIREBASE
+// ═══════════════════════════════════════════
+firebase.initializeApp({
+  apiKey:"AIzaSyDFL81Y_4EpqRSoJUvIg--lyQ0lC2rQAVc",
+  authDomain:"lavique-beb14.firebaseapp.com",
+  databaseURL:"https://lavique-beb14-default-rtdb.firebaseio.com",
+  projectId:"lavique-beb14",
+  storageBucket:"lavique-beb14.firebasestorage.app",
+  messagingSenderId:"481599803126",
+  appId:"1:481599803126:web:5908512bb54f1dbf5aa6d7"
+});
+const db = firebase.database();
 
-function persist() {
-  try {
-    localStorage.setItem('lv2_s', JSON.stringify(S.sellers));
-    localStorage.setItem('lv2_r', JSON.stringify(S.records));
-    localStorage.setItem('lv2_p', JSON.stringify(S.payments));
-  } catch(e){}
-}
-function hydrate() {
-  try {
-    S.sellers = JSON.parse(localStorage.getItem('lv2_s')||'[]');
-    S.records = JSON.parse(localStorage.getItem('lv2_r')||'[]');
-    S.payments = JSON.parse(localStorage.getItem('lv2_p')||'{}');
-  } catch(e){}
-}
+// ═══════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════
+const PW = {admin:'rierier0922', goto:'lavique.ai', factory_ena:'ena.lavique', factory_shouwa:'shouwa.lavique'};
+const RIE_EMAIL     = 'homesalonstyle@gmail.com';
+const GOTO_EMAIL    = 'ito.goto.1126@gmail.com';
+const FACTORY_EMAILS = {'恵那シルク':'rierier0922@gmail.com', '昭和転写':'rierier0922@yahoo.co.jp'};
+const CLOUD_NAME    = 'db5fgbtnn';
+const UPLOAD_PRESET = 'nsegom3j';
+const EJS_SERVICE   = 'service_vsfcefg';
+const EJS_TEMPLATE  = 'template_bmbb5pt';
+const APP_URL       = location.origin + location.pathname;
 
-// ===== UI helpers =====
-function switchTab(n) {
-  const names = ['sellers','import','sales','settlement'];
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i]===n));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-'+n).classList.add('active');
-  if (n==='sales') renderMonthGrid();
-  if (n==='settlement') renderStlPanel();
-}
-function toast(msg, type='ok') {
-  const el = document.getElementById('toast-el');
-  el.textContent = msg; el.className = 'toast show '+type;
-  setTimeout(()=>el.classList.remove('show'), 3000);
-}
+emailjs.init('qynFxNvxQ0QvI8ih0');
 
-// ===== Sellers =====
-function saveSeller() {
-  const name = document.getElementById('s-name').value.trim();
-  const vendor = document.getElementById('s-vendor').value.trim();
-  if (!name) { toast('販売者名は必須です','err'); return; }
-  S.sellers.push({ id:Date.now()+'', name, vendor,
-    email:document.getElementById('s-email').value.trim(),
-    phone:document.getElementById('s-phone').value.trim(),
-    address:document.getElementById('s-address').value.trim(),
-    sheetUrl:document.getElementById('s-sheeturl').value.trim(),
-    bank:document.getElementById('s-bank').value.trim(),
-    banktype:document.getElementById('s-banktype').value,
-    banknum:document.getElementById('s-banknum').value.trim(),
-    bankname:document.getElementById('s-bankname').value.trim(),
-    products:[]
-  });
-  persist(); renderSellersList();
-  ['s-name','s-vendor','s-email','s-phone','s-address','s-sheeturl','s-bank','s-banknum','s-bankname'].forEach(id=>document.getElementById(id).value='');
-  toast('販売者を登録しました ✓');
-}
-function delSeller(id) {
-  if (!confirm('削除しますか？')) return;
-  S.sellers = S.sellers.filter(s=>s.id!==id);
-  if (S.curProdSeller===id) closeProducts();
-  persist(); renderSellersList(); toast('削除しました');
-}
-function renderSellersList() {
-  document.getElementById('s-count').textContent = S.sellers.length+'名登録済み';
-  const el = document.getElementById('sellers-list');
-  if (!S.sellers.length) { el.innerHTML='<div class="empty" style="padding:36px"><div class="ei">👥</div><p>まだ登録されていません</p></div>'; return; }
-  el.innerHTML = `<div class="table-wrap"><table>
-    <thead><tr><th>販売者名</th><th>Vendor名</th><th>メール</th><th>スプレッドシート</th><th style="text-align:center">商品数</th><th></th></tr></thead>
-    <tbody>${S.sellers.map(s=>{
-      const pc=(s.products||[]).length;
-      return `<tr>
-        <td><strong>${s.name}</strong></td>
-        <td><span class="badge badge-vendor">${s.vendor}</span></td>
-        <td style="font-size:12px">${s.email||'—'}</td>
-        <td>${s.sheetUrl?`<a class="url-link" href="${s.sheetUrl}" target="_blank">🔗 開く</a>`:'<span style="font-size:11px;color:var(--muted)">未登録</span>'}</td>
-        <td style="text-align:center;font-weight:600;color:${pc>0?'var(--deep-rose)':'var(--muted)'}">${pc}件</td>
-        <td style="display:flex;gap:6px;justify-content:flex-end">
-          <button class="btn btn-outline btn-sm" onclick="openProducts('${s.id}')">🛍 商品</button>
-          <button class="btn btn-secondary btn-sm" onclick="openEditModal('${s.id}')">✏️ 編集</button>
-          <button class="btn btn-danger" onclick="delSeller('${s.id}')">削除</button>
-        </td>
-      </tr>`;
-    }).join('')}</tbody></table></div>`;
+// ═══════════════════════════════════════════
+// STATUS STEPS
+// ═══════════════════════════════════════════
+const ST = [
+  {key:'入稿受付',       color:'#94a3b8', next:'データ調整中'},
+  {key:'データ調整中',    color:'#f59e0b', next:'見積待ち'},
+  {key:'見積待ち',       color:'#3b82f6', next:'見積提示済み'},
+  {key:'見積提示済み',    color:'#8b5cf6', next:'サンプル費用入金'},
+  {key:'サンプル費用入金', color:'#06b6d4', next:'サンプル発注'},
+  {key:'サンプル発注',    color:'#ec4899', next:'サンプル確認中'},
+  {key:'サンプル確認中',  color:'#f97316', next:'本刷り見積待ち'},
+  {key:'本刷り見積待ち',  color:'#14b8a6', next:'本刷り発注'},
+  {key:'本刷り発注',     color:'#ea580c', next:'本刷り入金'},
+  {key:'本刷り入金',     color:'#c9768a', next:'納品完了'},
+  {key:'納品完了',       color:'#10b981', next:null},
+];
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let role = '', pendingRole = '';
+let casesData = {}, currentId = null;
+let msgOff = null, genUrl = '';
+let filterSt = 'all', payOpen = false;
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+const ts     = () => Date.now();
+const today  = () => new Date().toLocaleDateString('ja-JP');
+const genKey = () => Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,10);
+const fmtTime = (t) => new Date(t).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const linkify = (text) => {
+  if (!text) return '';
+  return text.replace(/(https?:\/\/[^\s|]+)/g, '<a href="$1" target="_blank" style="color:var(--blue);text-decoration:underline;word-break:break-all">$1</a>');
+};
+const isAdmin = () => role === 'admin' || role === 'goto';
+const isFactory = () => role === 'factory_ena' || role === 'factory_shouwa';
+
+// ═══════════════════════════════════════════
+// EMAIL NOTIFICATIONS
+// ═══════════════════════════════════════════
+function sendNotification(toEmail, senderName, caseName, studentName, messageText) {
+  if (!toEmail) return;
+  emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
+    to_email: toEmail, name: senderName, sender_name: senderName,
+    case_name: caseName, student_name: studentName,
+    message: messageText || '（画像が送信されました）',
+    app_url: APP_URL, email: toEmail,
+  }).catch(e => console.log('EmailJS error:', e));
 }
 
-// ===== Products =====
-function openProducts(sid) {
-  S.curProdSeller = sid;
-  const s = S.sellers.find(x=>x.id===sid);
-  document.getElementById('product-card').style.display='block';
-  document.getElementById('p-seller-name').textContent=s.name;
-  document.getElementById('p-name').value=''; document.getElementById('p-price').value='';
-  renderProducts(sid);
-  document.getElementById('product-card').scrollIntoView({behavior:'smooth',block:'start'});
-}
-function closeProducts() {
-  S.curProdSeller=null; document.getElementById('product-card').style.display='none';
-}
-function addProduct() {
-  const name=document.getElementById('p-name').value.trim();
-  const price=parseInt(document.getElementById('p-price').value)||0;
-  if (!name) { toast('商品名を入力してください','err'); return; }
-  const s=S.sellers.find(x=>x.id===S.curProdSeller); if (!s) return;
-  if (!s.products) s.products=[];
-  if (s.products.find(p=>p.name===name)) { toast('同じ商品名が既に登録されています','err'); return; }
-  s.products.push({id:Date.now()+'', name, price});
-  persist(); renderProducts(s.id); renderSellersList(); 
-  document.getElementById('p-name').value=''; document.getElementById('p-price').value='';
-  toast('商品を追加しました ✓');
-}
-function delProduct(sid, pid) {
-  const s=S.sellers.find(x=>x.id===sid); if (!s) return;
-  s.products=(s.products||[]).filter(p=>p.id!==pid);
-  persist(); renderProducts(sid); renderSellersList(); toast('削除しました');
-}
-function renderProducts(sid) {
-  const s=S.sellers.find(x=>x.id===sid);
-  const prods=s?.products||[];
-  const el=document.getElementById('product-list');
-  if (!prods.length) { el.innerHTML='<p style="font-size:13px;color:var(--muted);padding:10px 0">商品が登録されていません</p>'; return; }
-  el.innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>商品名</th><th style="text-align:right">単価</th><th></th></tr></thead>
-    <tbody id="prod-tbody-${sid}">${prods.map(p=>`<tr id="prow-${p.id}">
-      <td>${p.name}</td>
-      <td class="num">¥${p.price.toLocaleString()}</td>
-      <td style="text-align:right;display:flex;gap:6px;justify-content:flex-end">
-        <button class="btn btn-secondary btn-sm" onclick="editProductRow('${sid}','${p.id}')">✏️ 編集</button>
-        <button class="btn btn-danger" onclick="delProduct('${sid}','${p.id}')">削除</button>
-      </td>
-    </tr>`).join('')}</tbody></table></div>`;
-}
-function editProductRow(sid, pid) {
-  const s=S.sellers.find(x=>x.id===sid); if (!s) return;
-  const p=(s.products||[]).find(x=>x.id===pid); if (!p) return;
-  const row=document.getElementById('prow-'+pid);
-  row.innerHTML=`
-    <td colspan="3">
-      <div class="p-edit-row">
-        <input id="pe-name-${pid}" value="${p.name}" style="flex:1" placeholder="商品名">
-        <input id="pe-price-${pid}" type="number" value="${p.price}" style="width:100px" placeholder="単価">
-        <button class="btn btn-primary btn-sm" onclick="saveProductRow('${sid}','${pid}')">保存</button>
-        <button class="btn btn-secondary btn-sm" onclick="renderProducts('${sid}')">キャンセル</button>
-      </div>
-    </td>`;
-}
-function saveProductRow(sid, pid) {
-  const s=S.sellers.find(x=>x.id===sid); if (!s) return;
-  const p=(s.products||[]).find(x=>x.id===pid); if (!p) return;
-  const name=document.getElementById('pe-name-'+pid).value.trim();
-  const price=parseInt(document.getElementById('pe-price-'+pid).value)||0;
-  if (!name) { toast('商品名を入力してください','err'); return; }
-  p.name=name; p.price=price;
-  persist(); renderProducts(sid); renderSellersList(); toast('商品を更新しました ✓');
+// Admin notified when factory/student sends (pending)
+// Factory/student notified when admin forwards to them
+function notifyPending(msg, c) {
+  // Notify admin that a new pending message arrived
+  const text = msg.text || '（画像）';
+  sendNotification(RIE_EMAIL,  msg.senderLabel, c.designName, c.studentName, text);
+  sendNotification(GOTO_EMAIL, msg.senderLabel, c.designName, c.studentName, text);
 }
 
-// ===== Seller Edit Modal =====
-let editSellerId = null;
-function openEditModal(id) {
-  const s=S.sellers.find(x=>x.id===id); if (!s) return;
-  editSellerId=id;
-  document.getElementById('e-name').value=s.name||'';
-  document.getElementById('e-vendor').value=s.vendor||'';
-  document.getElementById('e-email').value=s.email||'';
-  document.getElementById('e-phone').value=s.phone||'';
-  document.getElementById('e-address').value=s.address||'';
-  document.getElementById('e-sheeturl').value=s.sheetUrl||'';
-  document.getElementById('e-bank').value=s.bank||'';
-  document.getElementById('e-banktype').value=s.banktype||'普通';
-  document.getElementById('e-banknum').value=s.banknum||'';
-  document.getElementById('e-bankname').value=s.bankname||'';
-  document.getElementById('edit-modal').style.display='flex';
-}
-function closeEditModal() {
-  editSellerId=null;
-  document.getElementById('edit-modal').style.display='none';
-}
-function saveEditSeller() {
-  const s=S.sellers.find(x=>x.id===editSellerId); if (!s) return;
-  const name=document.getElementById('e-name').value.trim();
-  const vendor=document.getElementById('e-vendor').value.trim();
-  if (!name) { toast('販売者名は必須です','err'); return; }
-  s.name=name; s.vendor=vendor;
-  s.email=document.getElementById('e-email').value.trim();
-  s.phone=document.getElementById('e-phone').value.trim();
-  s.address=document.getElementById('e-address').value.trim();
-  s.sheetUrl=document.getElementById('e-sheeturl').value.trim();
-  s.bank=document.getElementById('e-bank').value.trim();
-  s.banktype=document.getElementById('e-banktype').value;
-  s.banknum=document.getElementById('e-banknum').value.trim();
-  s.bankname=document.getElementById('e-bankname').value.trim();
-  persist(); renderSellersList(); closeEditModal(); toast('販売者情報を更新しました ✓');
-}
-
-// ===== CSV Import =====
-function handleCSV(inp) {
-  const f=inp.files[0]; if (!f) return;
-  const r=new FileReader(); r.onload=e=>parseCSV(e.target.result,f.name); r.readAsText(f,'UTF-8');
-}
-function csvLine(line) {
-  const res=[]; let cur='', inQ=false;
-  for (let i=0;i<line.length;i++) {
-    const c=line[i];
-    if (c==='"') { if (inQ&&line[i+1]==='"'){cur+='"';i++;} else inQ=!inQ; }
-    else if (c===','&&!inQ) { res.push(cur); cur=''; }
-    else cur+=c;
+function notifyForwarded(msg, c) {
+  const text = msg.forwardedText || msg.text || '（画像）';
+  if (msg.forwardTo === 'student' && c.studentEmail) {
+    sendNotification(c.studentEmail, msg.senderLabel, c.designName, c.studentName, text);
+  } else if (msg.forwardTo === 'factory') {
+    const fe = FACTORY_EMAILS[c.factory] || '';
+    if (fe) sendNotification(fe, msg.senderLabel, c.designName, c.studentName, text);
   }
-  res.push(cur); return res;
 }
-function parseCSV(text, filename) {
-  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
-  if (lines.length<2) { toast('CSVが空です','err'); return; }
-  const headers=csvLine(lines[0]);
-  const idx=h=>headers.findIndex(x=>x===h);
-  const iN=idx('Lineitem name'), iQ=idx('Lineitem quantity'), iP=idx('Lineitem price');
-  const iV=idx('Vendor'), iC=idx('Created at');
-  if (iN<0||iQ<0||iP<0) { toast('Shopify形式のCSVではありません','err'); return; }
 
-  const raw=[];
-  let minD=null, maxD=null;
-  for (let i=1;i<lines.length;i++) {
-    const c=csvLine(lines[i]);
-    const name=c[iN]; if (!name) continue;
-    const qty=parseFloat(c[iQ])||0; if (!qty) continue;
-    const price=parseFloat(c[iP])||0;
-    const vendor=iV>=0?(c[iV]||'不明'):'不明';
-    const created=iC>=0?c[iC]:'';
-    if (created) { const d=new Date(created); if (!isNaN(d)) { if (!minD||d<minD)minD=d; if (!maxD||d>maxD)maxD=d; } }
-    raw.push({name,qty,price,vendor});
+// ═══════════════════════════════════════════
+// IMAGE UPLOAD
+// ═══════════════════════════════════════════
+async function uploadImage(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', UPLOAD_PRESET);
+  fd.append('folder', 'lavique');
+  const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {method:'POST', body:fd});
+  const data = await res.json();
+  return data.secure_url;
+}
+
+async function sendImage(inputId) {
+  const fileInput = document.getElementById(inputId + 'file');
+  if (!fileInput || !fileInput.files[0] || !currentId) return;
+  const file = fileInput.files[0];
+  const c    = casesData[currentId] || {};
+  const btn  = document.getElementById(inputId + 'imgbtn');
+  if (btn) { btn.textContent = '送信中...'; btn.disabled = true; }
+  try {
+    const url = await uploadImage(file);
+    submitMsg(inputId, '', url);
+    fileInput.value = '';
+    if (btn) { btn.textContent = '送信'; btn.disabled = false; }
+  } catch(e) {
+    alert('画像のアップロードに失敗しました。');
+    if (btn) { btn.textContent = '送信'; btn.disabled = false; }
+  }
+}
+
+// ═══════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════
+function showPW(r) {
+  pendingRole = r;
+  const labels = {admin:'管理者１', goto:'管理者２', factory_ena:'工場：恵那シルク', factory_shouwa:'工場：昭和転写'};
+  document.getElementById('pwTitle').textContent = labels[r] + ' — パスワード';
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwErr').classList.add('hidden');
+  document.getElementById('pwModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('pwInput').focus(), 100);
+}
+function closePW() { document.getElementById('pwModal').classList.add('hidden'); }
+function checkPW() {
+  if (document.getElementById('pwInput').value === PW[pendingRole]) {
+    closePW(); doLogin(pendingRole);
+  } else {
+    document.getElementById('pwErr').classList.remove('hidden');
+  }
+}
+
+function showApp(appId) {
+  ['managerApp','factoryApp','studentApp'].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.display = 'none';
+    el.classList.remove('active');
+  });
+  document.getElementById('loginScreen').style.display = 'none';
+  const app = document.getElementById(appId);
+  app.style.display = 'flex';
+  app.classList.add('active');
+}
+
+function doLogin(r) {
+  role = r;
+  if (isAdmin()) {
+    document.getElementById('mgrTag').textContent = r === 'admin' ? '管理者１' : '管理者２';
+    if (r === 'admin') document.getElementById('fabBtn').classList.remove('hidden');
+    else document.getElementById('fabBtn').classList.add('hidden');
+    showApp('managerApp');
+    casesData = {};
+    db.ref('cases').on('value', s => { casesData = s.val() || {}; renderMgrList(); });
+  } else {
+    const fName = r === 'factory_ena' ? '恵那シルク' : '昭和転写';
+    document.getElementById('fctTag').textContent = '工場：' + fName;
+    showApp('factoryApp');
+    casesData = {};
+    db.ref('cases').on('value', s => { casesData = s.val() || {}; renderFctList(); });
+  }
+}
+
+function logout() {
+  role = ''; casesData = {}; currentId = null;
+  if (msgOff) { msgOff(); msgOff = null; }
+  ['managerApp','factoryApp','studentApp'].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.display = 'none';
+    el.classList.remove('active');
+  });
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ═══════════════════════════════════════════
+// MANAGER LIST
+// ═══════════════════════════════════════════
+function renderMgrList() {
+  const cases = Object.entries(casesData);
+  const prog = cases.filter(([,c]) => !['納品完了','入金済'].includes(c.status)).length;
+  const hon  = cases.filter(([,c]) => ['本刷り発注','納品完了'].includes(c.status)).length;
+  const done = cases.filter(([,c]) => c.status === '入金済').length;
+  document.getElementById('mgrStats').innerHTML =
+    `<div class="stat"><div class="stat-n" style="color:var(--pink)">${prog}</div><div class="stat-l">進行中</div></div>
+     <div class="stat"><div class="stat-n" style="color:var(--gold)">${hon}</div><div class="stat-l">本刷り以降</div></div>
+     <div class="stat"><div class="stat-n" style="color:var(--green)">${done}</div><div class="stat-l">完了</div></div>
+     <div class="stat"><div class="stat-n" style="color:var(--ink-mid)">${cases.length}</div><div class="stat-l">総案件</div></div>`;
+
+  // 月別・工場別支払い集計（入金日基準）
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  const thisMonth = now.getMonth(); // 0-indexed
+
+  // Collect all payment events per factory per month
+  // Key: "factory::YYYY-MM"
+  const payMap = {};
+  cases.forEach(([,c]) => {
+    if (!c.factory) return;
+    const addEntry = (dateStr, amount) => {
+      if (!dateStr || !amount) return;
+      const d = new Date(dateStr);
+      if (isNaN(d)) return;
+      const key = c.factory + '::' + d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      payMap[key] = (payMap[key] || 0) + amount;
+    };
+    if (c.dateSamplePaid && c.quoteSample) addEntry(c.dateSamplePaid, c.quoteSample);
+    if (c.dateHonPaid    && c.quoteHon)    addEntry(c.dateHonPaid,    c.quoteHon);
+  });
+
+  // Current month totals per factory
+  const curKey = (f) => f + '::' + thisYear + '-' + String(thisMonth+1).padStart(2,'0');
+  const factories = ['恵那シルク', '昭和転写'];
+  const curTotals = {};
+  factories.forEach(f => { curTotals[f] = payMap[curKey(f)] || 0; });
+  const grandTotal = Object.values(curTotals).reduce((a,b)=>a+b,0);
+
+  document.getElementById('payTotal').textContent = '¥' + grandTotal.toLocaleString();
+
+  // Build monthly breakdown
+  const allMonths = [...new Set(Object.keys(payMap).map(k=>k.split('::')[1]))].sort().reverse();
+  let detHtml = '';
+
+  // Current month section
+  detHtml += `<div style="font-size:11px;font-weight:700;color:#92400e;padding:6px 0 4px">📅 今月（${thisYear}年${thisMonth+1}月）</div>`;
+  factories.forEach(f => {
+    const amt = curTotals[f] || 0;
+    detHtml += `<div class="prow"><span style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;background:#fef3c7;border-radius:3px;padding:1px 5px">${f}</span></span><span style="font-weight:700;color:${amt?'#92400e':'#ccc'}">¥${amt.toLocaleString()}</span></div>`;
+  });
+  detHtml += `<div class="ptot"><span>今月合計</span><span>¥${grandTotal.toLocaleString()}</span></div>`;
+
+  // Past months
+  const pastMonths = allMonths.filter(m => m !== thisYear+'-'+String(thisMonth+1).padStart(2,'0'));
+  if (pastMonths.length > 0) {
+    detHtml += `<div style="font-size:11px;font-weight:700;color:#6b7280;padding:10px 0 4px">📁 過去の月</div>`;
+    pastMonths.forEach(month => {
+      const [y,mo] = month.split('-');
+      let monthTotal = 0;
+      let rowsHtml = '';
+      factories.forEach(f => {
+        const amt = payMap[f+'::'+month] || 0;
+        if (amt) {
+          monthTotal += amt;
+          rowsHtml += `<div class="prow" style="font-size:12px"><span style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;background:#f3f4f6;border-radius:3px;padding:1px 5px">${f}</span></span><span>¥${amt.toLocaleString()}</span></div>`;
+        }
+      });
+      detHtml += `<div style="font-size:11px;color:#6b7280;padding:4px 0 2px">${y}年${parseInt(mo)}月</div>`;
+      detHtml += rowsHtml;
+      detHtml += `<div class="ptot" style="font-size:12px"><span>小計</span><span>¥${monthTotal.toLocaleString()}</span></div>`;
+    });
   }
 
-  // Aggregate（商品名＋Vendorでまとめる）
-  const map={};
-  raw.forEach(r=>{
-    const k=r.vendor+'|||'+r.name;
-    if (!map[k]) map[k]={vendor:r.vendor,name:r.name,price:r.price,qty:0};
-    map[k].qty+=r.qty;
-  });
+  document.getElementById('payDet').innerHTML = detHtml || '<div style="font-size:12px;color:#999;padding:8px">入金日が入力された案件がありません</div>';
 
-  // 照合：まず商品名で全販売者を検索（商品名は販売者間で必ず一意）
-  // 次にVendor名でも補助照合
-  const rows=Object.values(map).map(r=>{
-    // ① 商品名で完全一致する登録商品を探す
-    let matchedSeller=null, matchedProduct=null;
-    for (const s of S.sellers) {
-      const p=(s.products||[]).find(p=>p.name===r.name);
-      if (p) { matchedSeller=s; matchedProduct=p; break; }
-    }
-    // ② 商品名で見つからなければVendor名で販売者を探す
-    if (!matchedSeller) matchedSeller=S.sellers.find(s=>s.vendor===r.vendor);
+  const counts = {}; ST.forEach(s => { counts[s.key] = cases.filter(([,c])=>c.status===s.key).length; });
+  let fHtml = `<button class="fil ${filterSt==='all'?'on':''}" onclick="setFilter('all')">すべて ${cases.length}</button>`;
+  ST.forEach(s => { fHtml += `<button class="fil ${filterSt===s.key?'on':''}" onclick="setFilter('${s.key}')">${s.key} ${counts[s.key]}</button>`; });
+  document.getElementById('mgrFilters').innerHTML = fHtml;
 
-    const match=matchedSeller&&matchedProduct?'full':matchedSeller?'seller':'none';
-    // 照合できた販売者のVendor名で上書き（CSV側のvendorを正として使いつつ、販売者名表示に使う）
-    const displayVendor=matchedSeller?matchedSeller.vendor:r.vendor;
-    return {...r, vendor:displayVendor, price:matchedProduct?matchedProduct.price:r.price, match, sellerId:matchedSeller?.id||null};
-  });
+  const filtered = filterSt === 'all' ? cases : cases.filter(([,c])=>c.status===filterSt);
+  document.getElementById('mgrCases').innerHTML = filtered.length === 0
+    ? '<div class="notice" style="background:#f9f8ff;color:var(--ink-light);margin-top:20px">該当する案件はありません</div>'
+    : filtered.map(([id,c]) => {
+        const st = ST.find(s=>s.key===c.status)||ST[0];
+        const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'}) : c.statusDate||'';
+        const smpLav = c.quoteSample ? '¥'+(Math.round(c.quoteSample*1.1)).toLocaleString() : '';
+        const honLav = c.quoteHon    ? '¥'+(Math.round(c.quoteHon*1.1)).toLocaleString()    : '';
+        const dateTags = [
+          c.dateSampleEst  ? `<span style="font-size:10px;background:#ede9fe;color:#6d28d9;border-radius:4px;padding:1px 5px">版代見積 ${c.dateSampleEst}${smpLav?' '+smpLav:''}</span>` : '',
+          c.dateSamplePaid ? `<span style="font-size:10px;background:#dcfce7;color:#166534;border-radius:4px;padding:1px 5px">版代入金 ${c.dateSamplePaid}</span>` : '',
+          c.dateHonEst     ? `<span style="font-size:10px;background:#dbeafe;color:#1d4ed8;border-radius:4px;padding:1px 5px">本刷見積 ${c.dateHonEst}${honLav?' '+honLav:''}</span>` : '',
+          c.dateHonPaid    ? `<span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:4px;padding:1px 5px">本刷入金 ${c.dateHonPaid}</span>` : '',
+        ].filter(Boolean).join(' ');
+        return `<div class="ccard" onclick="openCase('${id}','mgr')">
+          <div class="cdot"></div>
+          <div style="flex:1;min-width:0">
+            <div class="ctitle">${c.studentName} <span style="font-size:11px;color:var(--ink-light);font-weight:400">入稿 ${dateStr}</span></div>
+            <div class="csub">${c.designName}</div>
+            ${dateTags ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${dateTags}</div>` : ''}
+          </div>
+          <div class="cright">
+            <span class="cfct">${c.factory||'未定'}</span>
+            <span class="cbadge" style="color:${st.color};border-color:${st.color}">${c.status}</span>
+          </div>
+        </div>`;
+      }).join('');
+}
 
-  const fmt=d=>`${d.getFullYear()}年${d.getMonth()+1}月`;
-  const label=minD&&maxD&&minD.getMonth()===maxD.getMonth()?fmt(minD):(minD?fmt(minD)+'〜'+fmt(maxD):filename);
-  const period=label;
+function togglePay() { payOpen=!payOpen; document.getElementById('payDet').classList.toggle('hidden',!payOpen); }
+function setFilter(s) { filterSt=s; isAdmin()?renderMgrList():renderFctList(); }
 
-  const existIdx=S.records.findIndex(m=>m.label===label);
-  const nFull=rows.filter(r=>r.match==='full').length;
-  const nSeller=rows.filter(r=>r.match==='seller').length;
-  const nNone=rows.filter(r=>r.match==='none').length;
-  const vendors=[...new Set(rows.map(r=>r.vendor))];
+// ═══════════════════════════════════════════
+// FACTORY LIST
+// ═══════════════════════════════════════════
+function renderFctList() {
+  const fName = role==='factory_ena'?'恵那シルク':'昭和転写';
+  const cases = Object.entries(casesData).filter(([,c])=>c.factory===fName);
+  const counts = {}; ST.forEach(s => { counts[s.key]=cases.filter(([,c])=>c.status===s.key).length; });
+  let fHtml = `<button class="fil ${filterSt==='all'?'on':''}" onclick="setFilter('all')">すべて ${cases.length}</button>`;
+  ST.forEach(s => { if(counts[s.key]>0) fHtml+=`<button class="fil ${filterSt===s.key?'on':''}" onclick="setFilter('${s.key}')">${s.key} ${counts[s.key]}</button>`; });
+  document.getElementById('fctFilters').innerHTML = fHtml;
+  const filtered = filterSt==='all'?cases:cases.filter(([,c])=>c.status===filterSt);
+  document.getElementById('fctCases').innerHTML = filtered.length===0
+    ? '<div class="notice" style="background:#f9f8ff;color:var(--ink-light);margin-top:20px">担当案件はありません</div>'
+    : filtered.map(([id,c])=>{
+        const st=ST.find(s=>s.key===c.status)||ST[0];
+        const dateStr2 = c.createdAt ? new Date(c.createdAt).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'}) : c.statusDate||'';
+        return `<div class="ccard" onclick="openCase('${id}','fct')">
+          <div class="cdot"></div>
+          <div style="flex:1;min-width:0"><div class="ctitle">${c.studentName} <span style="font-size:11px;color:var(--ink-light);font-weight:400">${dateStr2}</span></div><div class="csub">${c.designName}</div></div>
+          <div class="cright"><span class="cbadge" style="color:${st.color};border-color:${st.color}">${c.status}</span></div>
+        </div>`;
+      }).join('');
+}
 
-  // 保存待ちデータを変数に保持（onclick経由のJSON渡しだと日本語で壊れるため）
-  S.pendingImport = {label, period, rows, existIdx};
+// ═══════════════════════════════════════════
+// OPEN / BACK
+// ═══════════════════════════════════════════
+function openCase(id, view) {
+  currentId = id;
+  const c = casesData[id];
+  if (view === 'mgr') {
+    document.getElementById('mgrList').classList.add('hidden');
+    document.getElementById('mgrDet').classList.remove('hidden');
+    renderMgrDet(c);
+    startMsgListen('mgr');
+    db.ref('cases/'+id).on('value', s => { if(s.val()){ casesData[id]=s.val(); renderMgrDet(s.val()); } });
+  } else {
+    document.getElementById('fctList').classList.add('hidden');
+    document.getElementById('fctDet').classList.remove('hidden');
+    renderFctDet(c);
+    startMsgListen('fct');
+    db.ref('cases/'+id).on('value', s => { if(s.val()){ casesData[id]=s.val(); renderFctDet(s.val()); } });
+  }
+}
 
-  const el=document.getElementById('import-result');
-  el.style.display='block';
-  document.getElementById('import-body').innerHTML=`
-    <div class="summary-bar" style="margin-bottom:16px">
-      <div class="summary-card"><div class="sc-label">対象期間</div><div class="sc-value sm">${label}</div></div>
-      <div class="summary-card"><div class="sc-label">商品種類</div><div class="sc-value">${rows.length}</div></div>
-      <div class="summary-card"><div class="sc-label">販売者数</div><div class="sc-value accent">${vendors.length}</div></div>
-      <div class="summary-card"><div class="sc-label">✓ 完全一致</div><div class="sc-value" style="color:var(--success)">${nFull}</div></div>
-      <div class="summary-card"><div class="sc-label">販売者のみ</div><div class="sc-value" style="color:var(--warning)">${nSeller}</div></div>
-      <div class="summary-card"><div class="sc-label">未照合</div><div class="sc-value" style="color:#c08080">${nNone}</div></div>
+function backToList(view) {
+  currentId = null;
+  if (msgOff) { msgOff(); msgOff = null; }
+  if (view==='mgr') {
+    document.getElementById('mgrDet').classList.add('hidden');
+    document.getElementById('mgrList').classList.remove('hidden');
+  } else {
+    document.getElementById('fctDet').classList.add('hidden');
+    document.getElementById('fctList').classList.remove('hidden');
+  }
+}
+
+// ═══════════════════════════════════════════
+// MANAGER DETAIL
+// ═══════════════════════════════════════════
+function renderMgrDet(c) {
+  const stuUrl = c.studentKey ? `${location.origin}${location.pathname}?s=${c.studentKey}` : '';
+  let html = `<div style="font-size:16px;font-weight:800;margin-bottom:10px">${c.studentName} — ${c.designName}</div>
+    <div class="igrid">
+      <div class="ibox"><div class="ilbl">仕様</div><div class="ival">${c.spec||'—'}</div></div>
+      <div class="ibox"><div class="ilbl">工場</div><div class="ival">${c.factory||'未定'}</div></div>
     </div>
-    ${existIdx>=0?`<div style="background:#fff8e8;border:1px solid #e8d080;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px">⚠️ <strong>${label}</strong> のデータは保存済みです。上書きしますか？</div>`:''}
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn btn-primary" id="save-btn" onclick="saveRecord()">
-        ${existIdx>=0?'⬆ 上書き保存':'💾 月次データとして保存'}
-      </button>
-      <button class="btn btn-secondary" onclick="switchTab('sales')">→ 月次集計を確認</button>
+    ${c.studentEmail?`<div class="ibox" style="margin-bottom:6px"><div class="ilbl">メールアドレス</div><div class="ival" style="font-size:13px">${c.studentEmail}</div></div>`:''}
+    ${c.studentTel?`<div class="ibox" style="margin-bottom:6px"><div class="ilbl">電話番号</div><div class="ival" style="font-size:13px">${c.studentTel}</div></div>`:''}
+    ${c.studentAddr?`<div class="ibox" style="margin-bottom:6px"><div class="ilbl">住所</div><div class="ival" style="font-size:13px">${c.studentAddr}</div></div>`:''}`;
+  if (c.quoteSample || c.quoteHon) {
+    html += `<div class="agrid">
+      ${c.quoteSample ? `<div class="abox" style="background:#faf5ff"><div class="ilbl">版代工場見積</div><div class="ival" style="color:#7c3aed">¥${(c.quoteSample||0).toLocaleString()}</div></div>` : ''}
+      ${c.quoteSample ? `<div class="abox" style="background:#ede9fe"><div class="ilbl">版代Lavique価格</div><div class="ival" style="color:#7c3aed">¥${Math.round((c.quoteSample||0)*1.1).toLocaleString()}</div></div>` : ''}
+      ${c.quoteHon ? `<div class="abox" style="background:#eff6ff"><div class="ilbl">本刷工場見積</div><div class="ival" style="color:#1d4ed8">¥${(c.quoteHon||0).toLocaleString()}</div></div>` : ''}
+      ${c.quoteHon ? `<div class="abox" style="background:#dbeafe"><div class="ilbl">本刷Lavique価格</div><div class="ival" style="color:#1d4ed8">¥${Math.round((c.quoteHon||0)*1.1).toLocaleString()}</div></div>` : ''}
     </div>`;
-}
-function saveRecord() {
-  const p=S.pendingImport; if (!p) { toast('保存するデータがありません','err'); return; }
-  const rec={id:Date.now()+'', label:p.label, period:p.period, rows:p.rows, savedAt:new Date().toLocaleDateString('ja-JP')};
-  if (p.existIdx>=0) S.records[p.existIdx]=rec; else S.records.unshift(rec);
-  S.pendingImport=null;
-  persist();
-  document.getElementById('import-result').style.display='none';
-  toast(`${rec.label} を保存しました ✓`);
-  switchTab('sales');
+  }
+  if (c.note) html += `<div style="font-size:12px;color:var(--ink-light);padding:6px 8px;background:#f9f8ff;border-radius:8px;margin-bottom:10px;line-height:1.8">${linkify(c.note)}</div>`;
+  if (stuUrl && role==='admin') {
+    html += `<div style="background:var(--pink-bg);border:1.5px solid var(--pink-l);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:10px;color:#9f4455;margin-bottom:4px">🔗 生徒用URL</div>
+      <div style="font-size:11px;color:#9f4455;word-break:break-all;margin-bottom:6px">${stuUrl}</div>
+      <button onclick="copyStudentUrl('${stuUrl}')" style="padding:5px 14px;background:var(--pink-l);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📋 URLをコピー</button>
+    </div>`;
+  }
+  if (role==='admin') {
+    if (c.factoryNotified) {
+      html += `<div style="width:100%;padding:9px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;color:var(--green);font-size:13px;font-weight:700;text-align:center;margin-bottom:6px">✅ 工場に通知済み（${c.factoryNotifiedAt||''}）</div>`;
+    } else {
+      html += `<button onclick="notifyFactory()" style="width:100%;padding:9px;background:#dbeafe;border:1.5px solid #93c5fd;border-radius:10px;color:#1d4ed8;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px">📨 新規入稿を工場に通知する</button>`;
+    }
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+      <button onclick="openQuote('estimate')" style="padding:9px;background:#fdf4ff;border:1.5px solid #e9d5ff;border-radius:10px;color:#7c3aed;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📄 見積書</button>
+      <button onclick="openQuote('receipt')" style="padding:9px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;color:#c2410c;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🧾 領収書</button>
+    </div>`;
+    html += `<button class="del-btn" onclick="deleteCase()">🗑️ この案件を削除</button>`;
+  }
+  document.getElementById('mgrInfo').innerHTML = html;
+  document.getElementById('mgrFlow').innerHTML = ST.map(s=>{
+    const on=c.status===s.key;
+    return `<span class="step" style="background:${on?s.color:'transparent'};color:${on?'#fff':s.color};border-color:${s.color};opacity:${on?1:0.4}">${s.key}</span>`;
+  }).join('');
+  renderAdv(c, 'mgrAdv');
+  if (!document.getElementById('mgrmta')) renderInput('mgrIn');
 }
 
-// ===== Monthly =====
-function agg(rows) {
-  const map={};
-  rows.forEach(r=>{
-    // sellerIdがあればそれを優先キーに使う
-    const k=(r.sellerId||r.vendor)+'|||'+r.name;
-    if (!map[k]) map[k]={vendor:r.vendor, sellerId:r.sellerId||null, name:r.name, price:r.price, qty:0, match:r.match||'none'};
-    map[k].qty+=r.qty;
+// ═══════════════════════════════════════════
+// FACTORY DETAIL
+// ═══════════════════════════════════════════
+function renderFctDet(c) {
+  document.getElementById('fctInfo').innerHTML = `
+    <div style="font-size:16px;font-weight:800;margin-bottom:10px">${c.studentName} — ${c.designName}</div>
+    <div class="igrid">
+      <div class="ibox"><div class="ilbl">仕様</div><div class="ival">${c.spec||'—'}</div></div>
+      <div class="ibox"><div class="ilbl">ステータス</div><div class="ival">${c.status}</div></div>
+      ${c.studentTel  ? `<div class="ibox"><div class="ilbl">電話番号</div><div class="ival"><a href="tel:${c.studentTel}" style="color:var(--blue)">${c.studentTel}</a></div></div>` : ''}
+      ${c.studentAddr ? `<div class="ibox" style="grid-column:span 2"><div class="ilbl">住所</div><div class="ival">${c.studentAddr}</div></div>` : ''}
+    </div>
+    ${c.note?`<div style="font-size:12px;color:var(--ink-light);padding:6px 8px;background:#f9f8ff;border-radius:8px;line-height:1.8">${linkify(c.note)}</div>`:''}`;
+  document.getElementById('fctFlow').innerHTML = ST.map(s=>{
+    const on=c.status===s.key;
+    return `<span class="step" style="background:${on?s.color:'transparent'};color:${on?'#fff':s.color};border-color:${s.color};opacity:${on?1:0.4}">${s.key}</span>`;
+  }).join('');
+  if (!document.getElementById('fctmta')) renderInput('fctIn');
+}
+
+// ═══════════════════════════════════════════
+// ADVANCE STATUS / ESTIMATE
+// ═══════════════════════════════════════════
+function renderAdv(c, id) {
+  if (!isAdmin()) { document.getElementById(id).innerHTML=''; return; }
+  const st = ST.find(s=>s.key===c.status);
+  const next = st?st.next:null;
+  let html = `<div style="font-size:12px;font-weight:700;color:var(--ink-mid);margin-bottom:8px">📌 ステータス変更</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">`;
+  ST.forEach(s => {
+    html += `<button class="step" onclick="advSt('${s.key}')" style="background:${c.status===s.key?s.color:'transparent'};color:${c.status===s.key?'#fff':s.color};border-color:${s.color};opacity:1;cursor:pointer">${s.key}</button>`;
   });
-  return Object.values(map).map(r=>{
-    const rev=r.qty*r.price, comm=Math.round(rev*0.2);
-    return {...r, revenue:rev, commission:comm, payout:rev-comm};
+  html += `</div>`;
+  if (next) html += `<button onclick="advSt('${next}')" style="padding:8px 16px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">→ ${next} に進める</button>`;
+  // 版代見積 Lavique価格計算
+  const smpLavique = c.quoteSample ? Math.round(c.quoteSample * 1.1) : '';
+  const honLavique = c.quoteHon    ? Math.round(c.quoteHon    * 1.1) : '';
+
+  html += `
+    <div style="font-size:12px;font-weight:700;color:var(--ink-mid);margin-bottom:8px">📅 日付・見積管理</div>
+
+    <div style="background:#faf5ff;border:1.5px solid #e9d5ff;border-radius:12px;padding:12px 14px;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:8px">🎨 版代（サンプル）</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="date-inp-box">
+          <div class="date-inp-lbl">版代見積日</div>
+          <input class="date-inp" type="date" id="d_dateSampleEst" value="${c.dateSampleEst||''}" onchange="saveDate('dateSampleEst',this.value)">
+        </div>
+        <div class="date-inp-box">
+          <div class="date-inp-lbl">版代入金日</div>
+          <input class="date-inp" type="date" id="d_dateSamplePaid" value="${c.dateSamplePaid||''}" onchange="saveDate('dateSamplePaid',this.value)">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end">
+        <div class="date-inp-box">
+          <div class="date-inp-lbl">工場見積金額（税抜）</div>
+          <div style="display:flex;gap:4px;align-items:center">
+            <input class="date-inp" type="number" id="q_sample" placeholder="例：5000" value="${c.quoteSample||''}" oninput="calcQuote('sample',this.value)" style="flex:1">
+            <span style="font-size:11px;color:var(--ink-light)">円</span>
+          </div>
+        </div>
+        <div class="date-inp-box" style="background:#ede9fe">
+          <div class="date-inp-lbl" style="color:#7c3aed">Lavique提示価格（+10%）</div>
+          <div id="lp_sample" style="font-size:16px;font-weight:900;color:#7c3aed">${smpLavique ? '¥' + smpLavique.toLocaleString() : '—'}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:12px 14px;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:8px">🖨️ 本刷り</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="date-inp-box">
+          <div class="date-inp-lbl">本刷り見積日</div>
+          <input class="date-inp" type="date" id="d_dateHonEst" value="${c.dateHonEst||''}" onchange="saveDate('dateHonEst',this.value)">
+        </div>
+        <div class="date-inp-box">
+          <div class="date-inp-lbl">本刷り入金日</div>
+          <input class="date-inp" type="date" id="d_dateHonPaid" value="${c.dateHonPaid||''}" onchange="saveDate('dateHonPaid',this.value)">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end">
+        <div class="date-inp-box">
+          <div class="date-inp-lbl">工場見積金額（税抜）</div>
+          <div style="display:flex;gap:4px;align-items:center">
+            <input class="date-inp" type="number" id="q_hon" placeholder="例：30000" value="${c.quoteHon||''}" oninput="calcQuote('hon',this.value)" style="flex:1">
+            <span style="font-size:11px;color:var(--ink-light)">円</span>
+          </div>
+        </div>
+        <div class="date-inp-box" style="background:#dbeafe">
+          <div class="date-inp-lbl" style="color:#1d4ed8">Lavique提示価格（+10%）</div>
+          <div id="lp_hon" style="font-size:16px;font-weight:900;color:#1d4ed8">${honLavique ? '¥' + honLavique.toLocaleString() : '—'}</div>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById(id).innerHTML = html;
+}
+
+function notifyFactory() {
+  if (!currentId) return;
+  const c = casesData[currentId] || {};
+  if (!c.factory) { alert('担当工場が設定されていません。先に工場を設定してください。'); return; }
+  const fe = FACTORY_EMAILS[c.factory];
+  if (!fe) { alert('工場のメールアドレスが見つかりません。'); return; }
+  sendNotification(fe, 'Lavique管理者', c.designName, c.studentName, '新規入稿がありました。ご確認をお願いします。');
+  sendNotification(RIE_EMAIL, 'Lavique', c.designName, c.studentName, c.factory + 'に新規入稿通知を送りました。');
+  const notifiedAt = today();
+  db.ref('cases/' + currentId).update({factoryNotified: true, factoryNotifiedAt: notifiedAt}).then(() => {
+    // 直接UIを更新
+    casesData[currentId] = Object.assign({}, casesData[currentId], {factoryNotified: true, factoryNotifiedAt: notifiedAt});
+    renderMgrDet(casesData[currentId]);
+  });
+  alert(c.factory + 'に新規入稿の通知メールを送りました！');
+}
+
+function downloadCsv() {
+  const from = document.getElementById('csvFrom').value;
+  const to   = document.getElementById('csvTo').value;
+
+  const rows = [['生徒名', '転写紙タイトル', '工場', '入稿日',
+    '版代見積日', '版代工場見積', 'Lavique版代価格', '版代入金日',
+    '本刷り見積日', '本刷り工場見積', 'Lavique本刷り価格', '本刷り入金日',
+    'ステータス']];
+
+  Object.values(casesData).forEach(c => {
+    // Filter: at least one estimate date in range
+    const dates = [c.dateSampleEst, c.dateHonEst].filter(Boolean);
+    if (from || to) {
+      const inRange = dates.some(d => {
+        if (from && d < from) return false;
+        if (to   && d > to)   return false;
+        return true;
+      });
+      if (!inRange) return;
+    }
+
+    const smpLav = c.quoteSample ? Math.round(c.quoteSample * 1.1) : '';
+    const honLav = c.quoteHon    ? Math.round(c.quoteHon    * 1.1) : '';
+    const entryDate = c.createdAt ? new Date(c.createdAt).toLocaleDateString('ja-JP') : '';
+
+    rows.push([
+      c.studentName  || '',
+      c.designName   || '',
+      c.factory      || '',
+      entryDate,
+      c.dateSampleEst  || '',
+      c.quoteSample    || '',
+      smpLav,
+      c.dateSamplePaid || '',
+      c.dateHonEst     || '',
+      c.quoteHon       || '',
+      honLav,
+      c.dateHonPaid    || '',
+      c.status         || '',
+    ]);
+  });
+
+  if (rows.length <= 1) { alert('該当データがありません'); return; }
+
+  // BOM + CSV for Japanese Excel
+  const bom = '\uFEFF';
+  const csv = bom + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const label = (from||'start') + '_' + (to||'end');
+  a.href = url; a.download = 'lavique_' + label + '.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function openQuote(type='estimate') {
+  if (!currentId) return;
+  const c = casesData[currentId] || {};
+  const _d = new Date();
+  const today_str = _d.getFullYear() + '年' + String(_d.getMonth()+1).padStart(2,'0') + '月' + String(_d.getDate()).padStart(2,'0') + '日';
+  // receipt number: YYYYMMDD-XXX
+  const receiptNo = new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + String(Math.floor(Math.random()*900)+100);
+
+  // Build items
+  const rows = [];
+  if (c.quoteSample) {
+    rows.push({ name: '版代　' + (c.designName||''), qty: '1 式', unit: c.quoteSample, amt: c.quoteSample });
+  }
+  if (c.quoteHon) {
+    rows.push({ name: '〃 荷口転写紙　' + (c.spec||''), qty: '—', unit: c.quoteHon, amt: c.quoteHon });
+  }
+  // If neither, show placeholder
+  if (!rows.length) {
+    rows.push({ name: '版代　' + (c.designName||''), qty: '1 式', unit: 0, amt: 0 });
+  }
+
+  const subtotal = rows.reduce((s,r) => s + (r.amt||0), 0);
+  const lavSubtotal = Math.round(subtotal * 1.1); // +10% markup
+  const tax = Math.round(lavSubtotal * 0.1);
+  const total = lavSubtotal + tax;
+
+  const rowsHtml = rows.map(r => `
+    <tr>
+      <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb">${r.name}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:center">${r.qty}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right">${r.unit ? r.unit.toLocaleString() : '—'}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right">${r.amt ? r.amt.toLocaleString() : '—'}</td>
+    </tr>`).join('');
+
+  // Blank filler rows
+  const blankRows = Array(Math.max(0, 7 - rows.length)).fill(
+    '<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb">&nbsp;</td><td style="border-bottom:1px solid #e5e7eb"></td><td style="border-bottom:1px solid #e5e7eb"></td><td style="border-bottom:1px solid #e5e7eb"></td></tr>'
+  ).join('');
+
+  document.getElementById('quotePaper').innerHTML = `
+    <div style="text-align:right;font-size:12px;color:#666;margin-bottom:4px">${today_str}</div>
+    <div style="text-align:right;font-size:12px;color:#666;margin-bottom:20px">請求番号: ${receiptNo}</div>
+    <div style="text-align:center;font-size:26px;font-weight:900;letter-spacing:6px;margin-bottom:28px">見 積 書</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">
+      <div>
+        <div style="font-size:18px;font-weight:800;border-bottom:2px solid #1a1a1a;padding-bottom:4px;margin-bottom:12px">${c.studentName||''}　様</div>
+        <div style="font-size:13px;margin-bottom:4px">件名 : ${c.studentName||''} ${c.designName||''}（${c.spec||''}）</div>
+        <div style="font-size:12px;color:#666;margin-bottom:16px">下記のとおりお見積申し上げます。</div>
+        <div style="font-size:13px;margin-bottom:4px;font-weight:700">お見積金額</div>
+        <div style="font-size:22px;font-weight:900">¥ ${total.toLocaleString()} -</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:15px;font-weight:800;margin-bottom:6px">Lavique Creative Decal Academy</div>
+        <div style="font-size:12px;color:#555;line-height:1.8">
+          〒7210973<br>
+          広島県福山市南蔵王町2丁目3-35<br>
+          後藤 あい<br>
+          TEL: 080-3894-4100<br>
+          pocha2_ageha@docomo.ne.jp
+        </div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:0">
+      <thead>
+        <tr style="background:#f3f4f6">
+          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #d1d5db;font-size:13px">品番・品名</th>
+          <th style="padding:10px 12px;text-align:center;border-bottom:2px solid #d1d5db;font-size:13px;width:80px">数量</th>
+          <th style="padding:10px 12px;text-align:right;border-bottom:2px solid #d1d5db;font-size:13px;width:90px">単価</th>
+          <th style="padding:10px 12px;text-align:right;border-bottom:2px solid #d1d5db;font-size:13px;width:90px">金額</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rowsHtml}
+        ${blankRows}
+        <tr style="background:#f9fafb">
+          <td colspan="3" style="padding:10px 12px;text-align:right;font-size:13px;border-bottom:1px solid #e5e7eb">小計</td>
+          <td style="padding:10px 12px;text-align:right;font-size:13px;border-bottom:1px solid #e5e7eb">${lavSubtotal.toLocaleString()}</td>
+        </tr>
+        <tr style="background:#f9fafb">
+          <td colspan="3" style="padding:10px 12px;text-align:right;font-size:13px;border-bottom:1px solid #e5e7eb">消費税 (10%)</td>
+          <td style="padding:10px 12px;text-align:right;font-size:13px;border-bottom:1px solid #e5e7eb">${tax.toLocaleString()}</td>
+        </tr>
+        <tr style="background:#f3f4f6">
+          <td colspan="3" style="padding:10px 12px;text-align:right;font-weight:800;font-size:14px">合計</td>
+          <td style="padding:10px 12px;text-align:right;font-weight:900;font-size:14px">${total.toLocaleString()}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:28px;font-size:12px;color:#555;line-height:1.8">
+      <div style="font-weight:700">お振込先：</div>
+      住信SBIネット銀行　0038（バナナ支店）107-9212048　ゴトウ アイ
+    </div>
+  `;
+  // ── Receipt mode ──
+  if (type === 'receipt') {
+    const receiptTotal = total;
+    document.getElementById('quotePaper').innerHTML = `
+      <div style="text-align:right;font-size:12px;color:#666;margin-bottom:4px">${today_str}</div>
+      <div style="text-align:right;font-size:12px;color:#666;margin-bottom:20px">領収番号: ${receiptNo}</div>
+      <div style="text-align:center;font-size:26px;font-weight:900;letter-spacing:6px;margin-bottom:28px">領 収 書</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px">
+        <div>
+          <div style="font-size:18px;font-weight:800;border-bottom:2px solid #1a1a1a;padding-bottom:4px;margin-bottom:16px">${c.studentName||''}　様</div>
+          <div style="font-size:13px;margin-bottom:12px">件名 : ${c.studentName||''} ${c.designName||''}（${c.spec||''}）</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">領収金額</div>
+          <div style="font-size:32px;font-weight:900;letter-spacing:2px">¥ ${receiptTotal.toLocaleString()} -</div>
+          <div style="font-size:12px;color:#666;margin-top:8px">（内消費税10%：¥${tax.toLocaleString()}）</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:800;margin-bottom:6px">Lavique Creative Decal Academy</div>
+          <div style="font-size:12px;color:#555;line-height:1.8">
+            〒7210973<br>
+            広島県福山市南蔵王町2丁目3-35<br>
+            後藤 あい<br>
+            TEL: 080-3894-4100<br>
+            pocha2_ageha@docomo.ne.jp
+          </div>
+        </div>
+      </div>
+      <div style="border-top:2px solid #e5e7eb;padding-top:16px;font-size:13px;color:#555">
+        <div style="font-weight:700;margin-bottom:6px">内訳</div>
+        ${rows.map(r => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f3f4f6">
+          <span>${r.name}</span><span>¥${r.amt ? Math.round(r.amt*1.1).toLocaleString() : '—'}</span>
+        </div>`).join('')}
+      </div>
+      <div style="margin-top:24px;font-size:12px;color:#888;text-align:center">
+        上記の金額を正に領収いたしました。
+      </div>
+    `;
+  }
+
+  document.getElementById('quoteModal').classList.remove('hidden');
+  document.getElementById('quoteModal').scrollTop = 0;
+}
+
+function saveDate(field, value) {
+  if (!currentId) return;
+  const update = {};
+  update[field] = value;
+  db.ref('cases/' + currentId).update(update).then(() => {
+    if (casesData[currentId]) casesData[currentId][field] = value;
   });
 }
-function renderMonthGrid() {
-  const el=document.getElementById('month-grid');
-  if (!S.records.length) {
-    el.innerHTML='<div class="empty" style="padding:36px"><div class="ei">📅</div><p>まだデータがありません。<br>「CSV取込」からアップロードしてください。</p></div>';
-    document.getElementById('month-detail').style.display='none';
+
+function calcQuote(type, raw) {
+  if (!currentId) return;
+  const val = parseInt(raw) || 0;
+  const lavique = val ? Math.round(val * 1.1) : null;
+  // Update display immediately
+  const dispEl = document.getElementById('lp_' + type);
+  if (dispEl) dispEl.textContent = lavique ? '¥' + lavique.toLocaleString() : '—';
+  // Debounce save
+  clearTimeout(window['qt_'+type]);
+  window['qt_'+type] = setTimeout(() => {
+    if (!currentId) return;
+    const field = type === 'sample' ? 'quoteSample' : 'quoteHon';
+    const update = {}; update[field] = val || null;
+    db.ref('cases/' + currentId).update(update).then(() => {
+      if (casesData[currentId]) casesData[currentId][field] = val || null;
+    });
+  }, 800);
+}
+
+function advSt(to) { if(currentId) db.ref('cases/'+currentId).update({status:to, statusDate:today()}); }
+function inputEst() {
+  if (!currentId) return;
+  const est=parseInt(document.getElementById('estVal').value)||0;
+  const mkp=parseInt(document.getElementById('mkpVal').value)||0;
+  db.ref('cases/'+currentId).update({estimate:est, markup:mkp, finalAmount:Math.round(est*(1+mkp/100))});
+}
+
+// ═══════════════════════════════════════════
+// MESSAGES — rendering
+// ═══════════════════════════════════════════
+function startMsgListen(view) {
+  if (msgOff) { msgOff(); msgOff = null; }
+  const ref = db.ref('messages/'+currentId);
+  const handler = ref.on('value', snap => renderMsgs(snap.val(), view));
+  msgOff = () => ref.off('value', handler);
+}
+
+function renderMsgs(msgs, view) {
+  const el = document.getElementById(view+'Msgs');
+  if (!msgs) {
+    el.innerHTML = '<div style="text-align:center;color:var(--ink-light);font-size:13px;padding:20px">まだメッセージはありません</div>';
     return;
   }
-  el.innerHTML=`<div class="month-grid">${S.records.map(m=>{
-    const a=agg(m.rows);
-    const rev=a.reduce((s,r)=>s+r.revenue,0);
-    const vn=[...new Set(m.rows.map(r=>r.vendor))].length;
-    return `<div class="month-card${S.curMonthId===m.id?' selected':''}" onclick="selectMonth('${m.id}')">
-      <button class="mc-del" onclick="event.stopPropagation();delMonth('${m.id}')">🗑</button>
-      <div class="mc-label">${m.label}</div>
-      <div class="mc-meta">${m.period||''}<br>販売者 ${vn}名 ／ 売上 ¥${rev.toLocaleString()}<br>保存日：${m.savedAt||'—'}</div>
-    </div>`;
-  }).join('')}</div>`;
-  if (S.curMonthId) showDetail(S.curMonthId);
-}
-function selectMonth(id) {
-  S.curMonthId=id; renderMonthGrid();
-}
-function delMonth(id) {
-  const m=S.records.find(r=>r.id===id);
-  if (!confirm(`「${m?.label}」を削除しますか？`)) return;
-  S.records=S.records.filter(r=>r.id!==id);
-  if (S.curMonthId===id) { S.curMonthId=null; document.getElementById('month-detail').style.display='none'; }
-  persist(); renderMonthGrid(); toast('削除しました');
-}
-function showDetail(id) {
-  const m=S.records.find(r=>r.id===id); if (!m) return;
-  document.getElementById('month-detail').style.display='block';
-  document.getElementById('detail-label').textContent=m.label+' 月次集計';
+  const sorted = Object.entries(msgs).sort(([,a],[,b])=>a.timestamp-b.timestamp);
 
-  // 販売者フィルター：sellerIdで一意に特定
-  const sellerIds=[...new Set(m.rows.map(r=>r.sellerId).filter(Boolean))];
-  const unmatched=[...new Set(m.rows.filter(r=>!r.sellerId).map(r=>r.vendor))];
-  const vs=document.getElementById('filter-vendor');
-  const cur=vs.value;
-  vs.innerHTML='<option value="">すべての販売者</option>'
-    +sellerIds.map(sid=>{
-      const s=S.sellers.find(x=>x.id===sid);
-      return `<option value="sid:${sid}">${s?s.name:sid}</option>`;
-    }).join('')
-    +unmatched.map(v=>`<option value="vendor:${v}">${v}（未照合）</option>`).join('');
-  if (cur) vs.value=cur;
-
-  const a=agg(m.rows);
-  const tR=a.reduce((s,r)=>s+r.revenue,0), tC=a.reduce((s,r)=>s+r.commission,0);
-  const tP=a.reduce((s,r)=>s+r.payout,0), tQ=a.reduce((s,r)=>s+r.qty,0);
-  document.getElementById('detail-summary').innerHTML=`
-    <div class="summary-card"><div class="sc-label">総販売数</div><div class="sc-value">${tQ.toLocaleString()}<span style="font-size:13px">個</span></div></div>
-    <div class="summary-card"><div class="sc-label">総売上合計</div><div class="sc-value accent">¥${tR.toLocaleString()}</div></div>
-    <div class="summary-card"><div class="sc-label">総手数料(20%)</div><div class="sc-value">¥${tC.toLocaleString()}</div></div>
-    <div class="summary-card"><div class="sc-label">総支払い金額</div><div class="sc-value" style="color:var(--success)">¥${tP.toLocaleString()}</div></div>`;
-  renderDetailTable();
-  document.getElementById('month-detail').scrollIntoView({behavior:'smooth',block:'start'});
-}
-function doSort(k) {
-  if (S.sortKey===k) S.sortAsc=!S.sortAsc; else { S.sortKey=k; S.sortAsc=false; }
-  renderDetailTable();
-}
-function renderDetailTable() {
-  if (!S.curMonthId) return;
-  const m=S.records.find(r=>r.id===S.curMonthId); if (!m) return;
-  let rows=agg(m.rows);
-  const vf=document.getElementById('filter-vendor').value;
-  const qf=(document.getElementById('filter-q').value||'').toLowerCase();
-  if (vf) {
-    if (vf.startsWith('sid:')) {
-      const sid=vf.slice(4);
-      rows=rows.filter(r=>r.sellerId===sid);
-    } else if (vf.startsWith('vendor:')) {
-      const v=vf.slice(7);
-      rows=rows.filter(r=>!r.sellerId&&r.vendor===v);
-    }
-  }
-  if (qf) rows=rows.filter(r=>r.name.toLowerCase().includes(qf));
-  const k=S.sortKey;
-  rows.sort((a,b)=>typeof a[k]==='string'?(S.sortAsc?a[k].localeCompare(b[k],'ja'):b[k].localeCompare(a[k],'ja')):(S.sortAsc?a[k]-b[k]:b[k]-a[k]));
-  const mBadge=s=>s==='full'?'<span class="badge badge-full">✓ 完全一致</span>':s==='seller'?'<span class="badge badge-seller">販売者のみ</span>':'<span class="badge badge-none">未照合</span>';
-  const sellerLabel=r=>{
-    if (r.sellerId) { const s=S.sellers.find(x=>x.id===r.sellerId); return s?s.name:r.vendor; }
-    return r.vendor;
-  };
-  // 行ごとにユニークキー（sellerId or vendor + 商品名）
-  const rowKey=r=>(r.sellerId||r.vendor)+'|||'+r.name;
-  // onclickに日本語を渡せないのでインデックスで管理
-  S._detailRows = rows;
-  document.getElementById('detail-tbody').innerHTML=rows.map((r,i)=>{
-    return `<tr id="drow-${i}">
-      <td><span class="badge badge-vendor">${sellerLabel(r)}</span></td>
-      <td>${r.name}</td>
-      <td style="text-align:center">${mBadge(r.match)}</td>
-      <td class="num">${r.qty}</td>
-      <td class="num">¥${r.price.toLocaleString()}</td>
-      <td class="num">¥${r.revenue.toLocaleString()}</td>
-      <td class="num" style="color:var(--muted)">¥${r.commission.toLocaleString()}</td>
-      <td class="num" style="font-weight:600;color:var(--success)">¥${r.payout.toLocaleString()}</td>
-      <td><button class="btn btn-secondary btn-sm" onclick="editDetailRow(${i})">✏️</button></td>
-    </tr>`;
-  }).join('');
-  const tR=rows.reduce((s,r)=>s+r.revenue,0), tC=rows.reduce((s,r)=>s+r.commission,0);
-  const tP=rows.reduce((s,r)=>s+r.payout,0), tQ=rows.reduce((s,r)=>s+r.qty,0);
-  document.getElementById('detail-tfoot').innerHTML=`<tr>
-    <td colspan="3">合計</td><td class="num">${tQ}</td><td></td>
-    <td class="num">¥${tR.toLocaleString()}</td>
-    <td class="num">¥${tC.toLocaleString()}</td>
-    <td class="num">¥${tP.toLocaleString()}</td><td></td></tr>`;
-}
-
-function editDetailRow(i) {
-  const m=S.records.find(r=>r.id===S.curMonthId); if (!m) return;
-  const r=S._detailRows[i]; if (!r) return;
-  const sellerPart=r.sellerId||r.vendor;
-  const rawRows=m.rows.filter(x=>(x.sellerId||x.vendor)===sellerPart && x.name===r.name);
-  const totalQty=rawRows.reduce((s,x)=>s+x.qty,0);
-  const row=document.getElementById('drow-'+i); if (!row) return;
-  row.innerHTML=`
-    <td colspan="9">
-      <div class="p-edit-row" style="flex-wrap:wrap;gap:10px;padding:12px 14px">
-        <span style="font-size:12px;font-weight:600;color:var(--deep);min-width:180px">${r.name}</span>
-        <label style="font-size:11px;color:var(--muted)">販売数</label>
-        <input id="dedit-qty" type="number" value="${totalQty}" style="width:70px">
-        <label style="font-size:11px;color:var(--muted)">単価</label>
-        <input id="dedit-price" type="number" value="${r.price}" style="width:90px">
-        <button class="btn btn-primary btn-sm" onclick="saveDetailRow(${i})">保存</button>
-        <button class="btn btn-secondary btn-sm" onclick="renderDetailTable()">キャンセル</button>
-      </div>
-    </td>`;
-}
-
-function saveDetailRow(i) {
-  const m=S.records.find(r=>r.id===S.curMonthId); if (!m) return;
-  const r=S._detailRows[i]; if (!r) return;
-  const sellerPart=r.sellerId||r.vendor;
-  const newQty=parseInt(document.getElementById('dedit-qty').value)||0;
-  const newPrice=parseInt(document.getElementById('dedit-price').value)||0;
-  // 元データを削除して1行に統合
-  m.rows=m.rows.filter(x=>!((x.sellerId||x.vendor)===sellerPart && x.name===r.name));
-  m.rows.push({sellerId:r.sellerId||null, vendor:r.vendor, name:r.name, price:newPrice, qty:newQty, match:'full'});
-  persist();
-  showDetail(S.curMonthId);
-  toast('データを更新しました ✓');
-}
-function exportCSV() {
-  if (!S.curMonthId) return;
-  const m=S.records.find(r=>r.id===S.curMonthId);
-  let rows=agg(m.rows);
-  const vf=document.getElementById('filter-vendor').value;
-  if (vf) rows=rows.filter(r=>r.vendor===vf);
-  const mLabel=s=>s==='full'?'完全一致':s==='seller'?'販売者のみ':'未照合';
-  const body=rows.map(r=>`"${r.vendor}","${r.name}","${mLabel(r.match)}",${r.qty},${r.price},${r.revenue},${r.commission},${r.payout}`).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob(['\uFEFF販売者,商品名,照合,販売数,単価,売上合計,手数料,支払い金額\n'+body],{type:'text/csv;charset=utf-8'}));
-  a.download=m.label+'_売上集計.csv'; a.click(); toast('CSVをダウンロードしました ✓');
-}
-
-// ===== Payment Status =====
-function payKey(monthId, sellerId) { return monthId+'_'+sellerId; }
-
-function togglePayment(monthId, sellerId) {
-  const k = payKey(monthId, sellerId);
-  S.payments[k] = !S.payments[k];
-  persist();
-  renderStlSellers();
-  toast(S.payments[k] ? '支払い済みにしました ✓' : '支払い済みを解除しました');
-}
-
-function isPaid(monthId, sellerId) {
-  return !!S.payments[payKey(monthId, sellerId)];
-}
-
-// 未払い繰越額を計算（当月より前の全月で未払い分を合算）
-function getCarryover(sellerId, currentMonthId) {
-  const curMonth = S.records.find(r=>r.id===currentMonthId);
-  if (!curMonth) return [];
-  // 月をIDでソート（IDはDate.now()なので数値順＝時系列順）
-  const prevMonths = S.records
-    .filter(r => r.id < currentMonthId && !isPaid(r.id, sellerId))
-    .sort((a,b) => a.id - b.id);
-
-  return prevMonths.map(m => {
-    const soldRows = agg(m.rows.filter(r=>r.sellerId===sellerId));
-    const tRev = soldRows.reduce((s,r)=>s+r.revenue, 0);
-    if (tRev === 0) return null;
-    const comm = Math.round(tRev * 0.2);
-    const payout = tRev - comm;
-    return { label: m.label, tRev, comm, payout };
-  }).filter(Boolean);
-}
-
-
-// ===== Settlement =====
-function renderStlPanel() {
-  const sel=document.getElementById('stl-month');
-  const cur=sel.value;
-  sel.innerHTML='<option value="">— 月を選択 —</option>'+S.records.map(m=>`<option value="${m.id}">${m.label}</option>`).join('');
-  if (cur) { sel.value=cur; renderStlSellers(); }
-}
-function renderStlSellers() {
-  const mid=document.getElementById('stl-month').value;
-  const el=document.getElementById('stl-sellers');
-  if (!mid) { el.innerHTML='<div class="empty"><p>月を選択すると販売者カードが表示されます</p></div>'; return; }
-  const m=S.records.find(r=>r.id===mid); if (!m) return;
-
-  if (!S.sellers.length) { el.innerHTML='<p style="color:var(--muted);font-size:13px">販売者が登録されていません</p>'; return; }
-
-  // 未照合vendorも表示
-  const unmatchedVendors=[...new Set(m.rows.filter(r=>!r.sellerId).map(r=>r.vendor))];
-
-  // 登録済み全販売者（売上ゼロでも全員表示）
-  const sellerCards=S.sellers.map(s=>{
-    const rows=agg(m.rows.filter(r=>r.sellerId===s.id));
-    const tRev=rows.reduce((sum,r)=>sum+r.revenue,0);
-    const payout=tRev-Math.round(tRev*0.2);
-    const isZero=tRev===0;
-    const paid=isPaid(mid, s.id);
-    const carryovers=getCarryover(s.id, mid);
-    const carryTotal=carryovers.reduce((s,c)=>s+c.payout,0);
-    const carryHTML=carryovers.length?`<div style="margin-top:6px;font-size:11px;color:#b06040;background:#fff3ee;border-radius:6px;padding:6px 10px">
-      繰越あり：${carryovers.map(c=>`${c.label} ¥${c.payout.toLocaleString()}`).join('　／　')}
-      <span style="font-weight:700">　合計 ¥${carryTotal.toLocaleString()}</span>
-    </div>`:'';
-    return `<div class="seller-card" style="cursor:default;${isZero?'opacity:0.65;border-style:dashed':''}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <div class="sc-name">${s.name}${isZero?'<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">販売なし</span>':''}</div>
-        <button onclick="togglePayment('${mid}','${s.id}')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:none;cursor:pointer;font-weight:600;background:${paid?'#4caf50':'#e0d0c8'};color:${paid?'white':'#7a5a50'}">
-          ${paid?'✓ 支払い済み':'○ 未払い'}
-        </button>
-      </div>
-      <div class="sc-info">
-        売上：¥${tRev.toLocaleString()} ／ 支払い：¥${payout.toLocaleString()}<br>
-        ${s.sheetUrl?`<a class="url-link" href="${s.sheetUrl}" target="_blank">🔗 スプレッドシートを開く</a>`:''}
-      </div>
-      ${carryHTML}
-      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-success btn-sm" onclick="dlXLSX('${mid}','${s.id}')">⬇ xlsx</button>
-        <button class="btn btn-primary btn-sm" onclick="dlPDF('${mid}','${s.id}')">📄 PDF</button>
-        <button class="btn btn-sm" style="background:#e8a0b0;color:white" onclick="dlIMG('${mid}','${s.id}')">🖼 PNG（utage用）</button>
-      </div>
-    </div>`;
-  });
-
-  // 未照合カード
-  const unmatchedCards=unmatchedVendors.map(v=>{
-    const rows=agg(m.rows.filter(r=>!r.sellerId&&r.vendor===v));
-    const tRev=rows.reduce((sum,r)=>sum+r.revenue,0);
-    return `<div class="seller-card" style="cursor:default;opacity:0.6">
-      <div class="sc-name" style="color:var(--muted)">${v}</div>
-      <div class="sc-info"><span class="badge badge-none">未照合</span><br>売上：¥${tRev.toLocaleString()}</div>
-      <div style="margin-top:8px;font-size:11px;color:var(--muted)">販売者登録・商品登録が必要です</div>
-    </div>`;
-  });
-
-  el.innerHTML=`<div class="seller-grid">${[...sellerCards,...unmatchedCards].join('')}</div>`;
-}
-
-// ===== XLSX Settlement Export =====
-function dlXLSX(monthId, sellerId) {
-  const d=buildSettlementData(monthId, sellerId); if (!d) return;
-  const {m, seller, rows, tRev, tQty, comm, payout, tfee, final, carryovers, carryTotal, carryPayout}=d;
-  const today=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
-
-  const wb=XLSX.utils.book_new();
-  const ws={};
-  const EC=XLSX.utils.encode_cell;
-  const mg=[];
-
-  function c(r,col,v,bold,sz,color,bg,alignH,fmt) {
-    const s={};
-    s.font={name:'Noto Sans JP', sz:sz||10, bold:!!bold};
-    if (color) s.font.color={rgb:color};
-    if (bg) s.fill={fgColor:{rgb:bg},patternType:'solid'};
-    const brd={style:'thin',color:{rgb:'D0C0B8'}};
-    s.border={top:brd,bottom:brd,left:brd,right:brd};
-    s.alignment={vertical:'center', wrapText:true};
-    if (alignH) s.alignment.horizontal=alignH;
-    const t=typeof v==='number'?'n':'s';
-    const cell={v,t,s};
-    if (fmt) cell.z=fmt;
-    ws[EC({r,c:col})]=cell;
-  }
-  function mg4(r,c1,c2) { mg.push({s:{r,c:c1},e:{r,c:c2}}); }
-
-  let R=0;
-  // Title
-  c(R,0,'Lavique ECショップ　委託販売 月次精算書',true,15,'3D2B35',null,'center');
-  mg4(R,0,3); R+=2;
-
-  // Recipient / sender
-  c(R,0,'宛先',true,9,'FFFFFF','5A3A40','center');
-  c(R,1,seller.name+'　様',true,13,'3D2B35',null,'left');
-  c(R,2,'発行者',true,9,'FFFFFF','5A3A40','center');
-  c(R,3,'Lavique・後藤あい',false,10,'3D2B35',null,'left');
-  R++;
-  c(R,0,'',false,10);
-  c(R,1,'',false,10);
-  c(R,2,'住所',true,9,'FFFFFF','5A3A40','center');
-  c(R,3,'広島県福山市南蔵王町2丁目3-35',false,10,'3D2B35',null,'left');
-  R++;
-  c(R,0,'');
-  c(R,1,'');
-  c(R,2,'電話',true,9,'FFFFFF','5A3A40','center');
-  c(R,3,'080-3894-4100',false,10,'3D2B35',null,'left');
-  R++;
-  c(R,0,'精算対象期間',true,9,'FFFFFF','5A3A40','center');
-  c(R,1,m.period||m.label,false,10,'3D2B35',null,'left');
-  c(R,2,'');
-  c(R,3,'');
-  mg4(R,1,3); R+=2;
-
-  // Product table header
-  ['商品名','単価(A)','販売数(B)','売上金額(C)'].forEach((h,ci)=>{
-    c(R,ci,h,true,10,'FFFFFF','3D2B35',ci===0?'left':'right');
-  }); R++;
-
-  // Product rows
-  rows.forEach(row=>{
-    const isZero=row.qty===0;
-    const txtColor=isZero?'AAAAAA':null;
-    const bg=isZero?'F8F5F3':null;
-    c(R,0,row.name,false,10,txtColor,bg);
-    c(R,1,row.price,false,10,txtColor,bg,'right','#,##0');
-    c(R,2,row.qty,false,10,txtColor,bg,'right','#,##0');
-    c(R,3,row.revenue,false,10,txtColor,bg,'right','#,##0');
-    R++;
-  });
-
-  // Total row
-  c(R,0,'合計',true,10,'3D2B35','E8D5C8');
-  c(R,1,'',false,10,null,'E8D5C8');
-  c(R,2,tQty,true,10,'3D2B35','E8D5C8','right','#,##0');
-  c(R,3,tRev,true,10,'3D2B35','E8D5C8','right','#,##0');
-  R+=2;
-
-  // Calculation section
-  const calcs=[
-    ['当月売上合計','',tRev],
-    ['販売手数料(20%)',`${tRev.toLocaleString()} × 20%`,comm],
-    ['当月支払対象額',`${tRev.toLocaleString()} − ${comm.toLocaleString()}`,payout],
-  ];
-  // 繰越行
-  carryovers.forEach(cv=>{
-    calcs.push([cv.label+'　繰越','前月未払い分',cv.payout]);
-  });
-  if (carryovers.length) {
-    calcs.push(['繰越合計支払対象額','',carryPayout]);
-  }
-  calcs.push(['振込手数料',carryPayout<20000?'20,000円未満のためご負担':'20,000円以上のため当方負担',tfee]);
-
-  calcs.forEach(([label,formula,amount],i)=>{
-    const isCarry=carryovers.length && i>=3 && i<3+carryovers.length;
-    const bg=isCarry?'FFF8E0':'5A3A40';
-    const fg=isCarry?'A06020':'FFFFFF';
-    c(R,0,label,true,9,fg,bg);
-    c(R,1,formula,false,9,null,null,'center');
-    mg4(R,1,2);
-    c(R,3,amount,true,10,null,null,'right','#,##0');
-    R++;
-  });
-  // Final payout
-  c(R,0,'最終振込金額',true,12,'A0695A','FFF0EB');
-  c(R,1,'',false,10,null,'FFF0EB');
-  c(R,2,'',false,10,null,'FFF0EB');
-  c(R,3,final,true,14,'A0695A','FFF0EB','right','#,##0');
-  mg4(R,0,2); R+=2;
-
-  // Notes
-  c(R,0,'当月分の精算金額は上記の通りとなります。',false,10);
-  mg4(R,0,3); R++;
-  ['・20,000円未満の場合：振込手数料300円をご負担いただきます',
-   '・20,000円以上の場合：振込手数料は当方にて負担いたします'].forEach(note=>{
-    c(R,0,note,false,9,'7A5A5A'); mg4(R,0,3); R++;
-  }); R++;
-
-  // 連絡案内
-  ['今月15日までに振込希望の旨と振込先銀行を転写紙協会のLINEにてご連絡ください。'].forEach(note=>{
-    c(R,0,note,false,10,'3D2B35'); mg4(R,0,3); R++;
-  }); R++;
-
-  // Bank info
-  if (seller.bank) {
-    c(R,0,'振込先口座',true,9,'FFFFFF','5A3A40');
-    c(R,1,`${seller.bank}　${seller.banktype}　${seller.banknum}　${seller.bankname}`,false,10);
-    mg4(R,1,3); R++;
-  }
-
-  // Issue date
-  c(R,0,'発行日',true,9,'FFFFFF','5A3A40');
-  c(R,1,today,false,10); mg4(R,1,3);
-
-  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:R,c:3}});
-  ws['!merges']=mg;
-  ws['!cols']=[{wch:36},{wch:20},{wch:10},{wch:16}];
-  const heights=Array(R+1).fill({hpt:22});
-  heights[0]={hpt:36};
-  ws['!rows']=heights;
-
-  XLSX.utils.book_append_sheet(wb,ws,'月次精算書');
-  XLSX.writeFile(wb,`${m.label}_精算書_${seller.name}.xlsx`);
-  toast(`${seller.name} 様の精算書をダウンロードしました ✓`);
-}
-
-// ===== PDF Settlement Export =====
-function buildSettlementData(monthId, sellerId) {
-  const m=S.records.find(r=>r.id===monthId); if (!m) return null;
-  const seller=S.sellers.find(s=>s.id===sellerId)||{name:sellerId, id:sellerId, products:[]};
-
-  // 当月売上
-  const soldRows=agg(m.rows.filter(r=>r.sellerId===sellerId));
-  const registeredProducts=seller.products||[];
-  const zeroRows=registeredProducts
-    .filter(p=>!soldRows.find(r=>r.name===p.name))
-    .map(p=>({sellerId, vendor:seller.vendor||'', name:p.name, price:p.price, qty:0, revenue:0, commission:0, payout:0}));
-
-  let rows;
-  if (registeredProducts.length) {
-    const orderedSold=registeredProducts.map(p=>soldRows.find(r=>r.name===p.name)).filter(Boolean);
-    const unregisteredSold=soldRows.filter(r=>!registeredProducts.find(p=>p.name===r.name));
-    rows=[...orderedSold,...unregisteredSold,...zeroRows];
-  } else { rows=[...soldRows,...zeroRows]; }
-
-  // 繰越データ（未払い前月分）
-  const carryovers=getCarryover(sellerId, monthId);
-  const carryTotal=carryovers.reduce((s,c)=>s+c.payout,0);
-
-  const tRev=rows.reduce((s,r)=>s+r.revenue,0);
-  const tQty=rows.reduce((s,r)=>s+r.qty,0);
-  const comm=Math.round(tRev*0.2);
-  const payout=tRev-comm;
-  // 繰越を加算した最終支払い額
-  const carryPayout = payout + carryTotal;
-  const tfee=carryPayout<20000?300:0;
-  const final=carryPayout-tfee;
-  return {m, seller, rows, tRev, tQty, comm, payout, tfee, final, carryovers, carryTotal, carryPayout};
-}
-
-function dlPDF(monthId, vendor) {
-  const d=buildSettlementData(monthId,vendor); if (!d) return;
-  const {m,seller,rows,tRev,tQty,comm,payout,tfee,final}=d;
-  const today=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-
-  // フォント設定（日本語対応のためbase64埋め込みは不要、ブラウザのPDFレンダリングに委ねる）
-  const W=210, margin=18;
-  let y=20;
-
-  // タイトル
-  doc.setFontSize(16); doc.setFont('helvetica','bold');
-  doc.text('Lavique ECショップ　委託販売 月次精算書', W/2, y, {align:'center'});
-  y+=10;
-  doc.setDrawColor(160,105,90); doc.setLineWidth(0.5);
-  doc.line(margin, y, W-margin, y); y+=8;
-
-  // 宛先・発行者
-  doc.setFontSize(13); doc.setFont('helvetica','bold');
-  doc.text(seller.name+'  様', margin, y); 
-  doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.setTextColor(80,80,80);
-  doc.text('Lavique・後藤あい', W-margin, y, {align:'right'});
-  y+=5;
-  doc.text('広島県福山市南蔵王町2丁目3-35　TEL: 080-3894-4100', W-margin, y, {align:'right'});
-  y+=8;
-
-  // 精算期間
-  doc.setFontSize(10); doc.setTextColor(40,40,40);
-  doc.setFillColor(250,248,245); doc.roundedRect(margin, y-4, W-margin*2, 10, 2, 2, 'F');
-  doc.setFont('helvetica','bold'); doc.text('精算対象期間：', margin+3, y+2);
-  doc.setFont('helvetica','normal'); doc.text(m.period||m.label, margin+32, y+2);
-  y+=14;
-
-  // 商品テーブル
-  doc.autoTable({
-    startY: y,
-    margin: {left:margin, right:margin},
-    head: [['商品名','単価(A)','販売数(B)','売上金額(C)']],
-    body: rows.map(r=>[
-      r.name,
-      r.qty===0?'¥'+r.price.toLocaleString()+' (-)' : '¥'+r.price.toLocaleString(),
-      r.qty,
-      '¥'+r.revenue.toLocaleString()
-    ]),
-    foot: [['合計','',tQty,'¥'+tRev.toLocaleString()]],
-    headStyles: {fillColor:[61,43,53], textColor:255, fontSize:10, fontStyle:'bold'},
-    footStyles: {fillColor:[232,213,200], textColor:[44,31,38], fontStyle:'bold', fontSize:10},
-    bodyStyles: {fontSize:9},
-    columnStyles: {0:{cellWidth:'auto'}, 1:{halign:'right'}, 2:{halign:'right'}, 3:{halign:'right'}},
-    didParseCell(data) {
-      if (data.section==='body') {
-        const row=rows[data.row.index];
-        if (row&&row.qty===0) { data.cell.styles.textColor=[170,170,170]; data.cell.styles.fillColor=[248,245,243]; }
+  if (view === 'mgr') {
+    // Admin sees ALL messages — pending as approval cards, forwarded as bubbles
+    el.innerHTML = sorted.map(([mid, m]) => {
+      if (m.status === 'pending') {
+        return renderPendingCard(mid, m);
+      } else {
+        return renderBubble(m, 'mgr');
       }
-    },
-    showFoot:'lastPage',
-  });
-  y=doc.lastAutoTable.finalY+8;
-
-  // 計算テーブル
-  const calcBody=[
-    ['当月売上合計','','¥'+tRev.toLocaleString()],
-    ['販売手数料(20%)', tRev.toLocaleString()+' × 20%', '¥'+comm.toLocaleString()],
-    ['当月支払対象額', tRev.toLocaleString()+' − '+comm.toLocaleString(), '¥'+payout.toLocaleString()],
-  ];
-  // 繰越行
-  carryovers.forEach(c=>{
-    calcBody.push([c.label+'　繰越', '前月未払い分', '¥'+c.payout.toLocaleString()]);
-  });
-  if (carryovers.length) {
-    calcBody.push(['繰越合計支払対象額','','¥'+carryPayout.toLocaleString()]);
+    }).join('');
+  } else if (view === 'fct') {
+    // Factory sees: ALL their own sent messages + messages forwarded to them or both
+    const visible = sorted.filter(([,m]) =>
+      (m.sender==='factory_ena' || m.sender==='factory_shouwa') ||
+      (m.status==='forwarded' && (m.forwardTo==='factory' || m.forwardTo==='both'))
+    );
+    el.innerHTML = visible.length===0
+      ? '<div style="text-align:center;color:var(--ink-light);font-size:13px;padding:20px">まだメッセージはありません</div>'
+      : visible.map(([,m]) => renderBubble(m,'fct')).join('');
+  } else if (view === 'stu') {
+    // Student sees: ALL their own sent messages + messages forwarded to them or both
+    const visible = sorted.filter(([,m]) =>
+      m.sender === 'student' ||
+      (m.status === 'forwarded' && (m.forwardTo === 'student' || m.forwardTo === 'both'))
+    );
+    el.innerHTML = visible.length===0
+      ? '<div style="text-align:center;color:var(--ink-light);font-size:13px;padding:20px">まだメッセージはありません</div>'
+      : visible.map(([,m]) => renderBubble(m,'stu')).join('');
   }
-  calcBody.push(['振込手数料', carryPayout<20000?'20,000円未満のためご負担':'20,000円以上のため当方負担', '¥'+tfee.toLocaleString()]);
-  calcBody.push(['最終振込金額','','¥'+final.toLocaleString()]);
-  const finalRowIdx=calcBody.length-1;
-  const carryRowIdxes=carryovers.map((_,i)=>3+i);
-
-  doc.autoTable({
-    startY: y,
-    margin: {left:margin, right:margin},
-    body: calcBody,
-    bodyStyles: {fontSize:10},
-    columnStyles: {0:{fontStyle:'bold', cellWidth:55}, 1:{fontSize:9, textColor:[100,80,80]}, 2:{halign:'right', fontStyle:'bold'}},
-    didParseCell(data) {
-      if (data.row.index===finalRowIdx) {
-        data.cell.styles.fillColor=[255,240,235];
-        data.cell.styles.textColor=[160,105,90];
-        data.cell.styles.fontSize=12;
-      }
-      if (carryRowIdxes.includes(data.row.index)) {
-        data.cell.styles.fillColor=[255,248,230];
-        data.cell.styles.textColor=[160,100,40];
-      }
-    },
-  });
-  y=doc.lastAutoTable.finalY+10;
-
-  // 注記
-  doc.setFontSize(9); doc.setTextColor(80,80,80);
-  doc.text('当月分の精算金額は上記の通りとなります。', margin, y); y+=5;
-  doc.text('・20,000円未満の場合：振込手数料300円をご負担いただきます', margin, y); y+=5;
-  doc.text('・20,000円以上の場合：振込手数料は当方にて負担いたします', margin, y); y+=10;
-
-  // 連絡案内
-  doc.setFontSize(10); doc.setTextColor(40,40,40);
-  doc.text('今月15日までに振込希望の旨と振込先銀行を転写紙協会のLINEにてご連絡ください。', margin, y); y+=10;
-
-  // 口座情報
-  if (seller.bank) {
-    doc.setFontSize(9);
-    doc.text('振込先口座：'+seller.bank+'　'+seller.banktype+'　'+seller.banknum+'　'+seller.bankname, margin, y); y+=8;
-  }
-
-  // 発行日
-  doc.setTextColor(120,100,100);
-  doc.text('発行日：'+today, W-margin, y, {align:'right'});
-
-  doc.save(`${m.label}_精算書_${seller.name}.pdf`);
-  toast(`${seller.name} 様のPDFをダウンロードしました ✓`);
+  el.scrollTop = el.scrollHeight;
 }
 
-// ===== PNG Image Export (utage用) =====
-async function dlIMG(monthId, vendor) {
-  const d=buildSettlementData(monthId,vendor); if (!d) return;
-  const {m,seller,rows,tRev,tQty,comm,payout,tfee,final}=d;
-  const today=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
+function renderPendingCard(mid, m) {
+  const c = casesData[currentId] || {};
+  const canFwdToStu = m.sender !== 'student';  // factory → student
+  const canFwdToFct = m.sender !== 'factory_ena' && m.sender !== 'factory_shouwa'; // student → factory
+  const imgHtml = m.imageUrl
+    ? `<img src="${m.imageUrl}" class="pending-img" onclick="window.open('${m.imageUrl}','_blank')">`
+    : '';
+  const editArea = m.imageUrl ? '' :
+    `<textarea class="pending-edit" id="edit_${mid}" rows="2">${m.text||''}</textarea>`;
+  let fwdBtns = '';
+  if (canFwdToStu) fwdBtns += `<button class="fwd-btn fwd-to-stu" onclick="forwardMsg('${mid}','student')">→ 生徒に転送</button>`;
+  if (canFwdToFct) fwdBtns += `<button class="fwd-btn fwd-to-fct" onclick="forwardMsg('${mid}','factory')">→ 工場に転送</button>`;
+  return `<div class="pending-card" id="pcard_${mid}">
+    <div class="pending-head">
+      <span class="pending-tag">⏳ 承認待ち</span>
+      <span class="pending-from">${m.senderLabel||m.sender} · ${fmtTime(m.timestamp)}</span>
+    </div>
+    <div class="pending-body">${m.text||''}</div>
+    ${imgHtml}
+    ${editArea}
+    <div class="fwd-row">
+      ${fwdBtns}
+      ${role==='admin'?`<button class="del-msg-btn" onclick="deleteMsg('${mid}')">削除</button>`:''}
+    </div>
+  </div>`;
+}
 
-  const area=document.getElementById('settlement-preview-area');
-  area.innerHTML=`
-    <div class="sp-title">Lavique ECショップ　委託販売 月次精算書</div>
-    <hr class="sp-divider">
-    <div class="sp-meta">
-      <div class="sp-meta-left"><div class="recipient">${seller.name}　様</div></div>
-      <div class="sp-meta-right">Lavique・後藤あい<br>広島県福山市南蔵王町2丁目3-35<br>TEL: 080-3894-4100</div>
-    </div>
-    <div class="sp-period"><strong>精算対象期間：</strong>${m.period||m.label}</div>
-    <table class="sp-table">
-      <thead><tr><th>商品名</th><th>単価(A)</th><th>販売数(B)</th><th>売上金額(C)</th></tr></thead>
-      <tbody>
-        ${rows.map(r=>`<tr class="${r.qty===0?'zero':''}">
-          <td>${r.name}</td>
-          <td>¥${r.price.toLocaleString()}</td>
-          <td>${r.qty}</td>
-          <td>¥${r.revenue.toLocaleString()}</td>
-        </tr>`).join('')}
-      </tbody>
-      <tfoot><tr><td>合計</td><td></td><td>${tQty}</td><td>¥${tRev.toLocaleString()}</td></tr></tfoot>
-    </table>
-    <table class="sp-calc">
-      <tr><td>当月売上合計</td><td></td><td>¥${tRev.toLocaleString()}</td></tr>
-      <tr><td>販売手数料(20%)</td><td style="font-size:10px;color:#9a7a7a">${tRev.toLocaleString()} × 20%</td><td>¥${comm.toLocaleString()}</td></tr>
-      <tr><td>支払対象額</td><td style="font-size:10px;color:#9a7a7a">${tRev.toLocaleString()} − ${comm.toLocaleString()}</td><td>¥${payout.toLocaleString()}</td></tr>
-      <tr><td>振込手数料</td><td style="font-size:10px;color:#9a7a7a">${payout<20000?'20,000円未満のためご負担':'20,000円以上のため当方負担'}</td><td>¥${tfee.toLocaleString()}</td></tr>
-      <tr class="final"><td>最終振込金額</td><td></td><td>¥${final.toLocaleString()}</td></tr>
-    </table>
-    <div class="sp-notes">
-      当月分の精算金額は上記の通りとなります。<br>
-      ・20,000円未満の場合：振込手数料300円をご負担いただきます<br>
-      ・20,000円以上の場合：振込手数料は当方にて負担いたします
-    </div>
-    <div class="sp-notes">
-      今月15日までに振込希望の旨と振込先銀行を転写紙協会のLINEにてご連絡ください。
-    </div>
-    ${seller.bank?`<div class="sp-bank">振込先口座：${seller.bank}　${seller.banktype}　${seller.banknum}　${seller.bankname}</div>`:''}
-    <div class="sp-footer">発行日：${today}</div>
-  `;
+function renderBubble(m, view) {
+  const isMe = (view==='mgr' && (m.sender==='admin'||m.sender==='goto')) ||
+               (view==='fct' && (m.sender==='factory_ena'||m.sender==='factory_shouwa')) ||
+               (view==='stu' && m.sender==='student');
+  // For factory/student: show original sender label
+  const label = m.senderLabel || m.sender;
+  const text  = m.forwardedText || m.text || '';
+  const side  = isMe ? 'me' : 'them';
+  const inner = m.imageUrl
+    ? `<img src="${m.imageUrl}" class="mimg" onclick="window.open('${m.imageUrl}','_blank')">`
+    : `<div class="mbubble ${side}">${text}</div>`;
+  return `<div class="mwrap ${side}">
+    <div class="mlbl">${label}</div>
+    ${inner}
+    <div class="mtime">${fmtTime(m.timestamp)}</div>
+  </div>`;
+}
 
-  toast('画像を生成中... ⏳');
+// ═══════════════════════════════════════════
+// FORWARD / DELETE MESSAGE
+// ═══════════════════════════════════════════
+function forwardMsg(mid, forwardTo) {
+  if (!currentId) return;
+  const c = casesData[currentId] || {};
+  const editEl = document.getElementById('edit_' + mid);
+  const editedText = editEl ? editEl.value.trim() : null;
+
+  const updates = { status: 'forwarded', forwardTo, forwardedAt: ts() };
+  if (editedText !== null) updates.forwardedText = editedText;
+
+  db.ref('messages/' + currentId + '/' + mid).update(updates).then(() => {
+    // Get updated message for notification
+    db.ref('messages/' + currentId + '/' + mid).once('value', snap => {
+      if (snap.val()) notifyForwarded(snap.val(), c);
+    });
+  });
+}
+
+function deleteMsg(mid) {
+  if (!currentId || role !== 'admin') return;
+  if (!confirm('このメッセージを削除しますか？')) return;
+  db.ref('messages/' + currentId + '/' + mid).remove();
+}
+
+// ═══════════════════════════════════════════
+// INPUT AREA
+// ═══════════════════════════════════════════
+function renderInput(containerId) {
+  const prefix = containerId.replace('In','');
+  document.getElementById(containerId).innerHTML = `
+    <div class="mrow">
+      <textarea class="mta" id="${prefix}mta" rows="2" placeholder="メッセージを入力..."></textarea>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+      <span class="file-lbl">📎 画像添付：</span>
+      <input type="file" id="${prefix}file" accept="image/*" style="font-size:12px;flex:1;min-width:0">
+    </div>
+    <button class="sbtn" id="${prefix}sendbtn" style="width:100%" onclick="sendAll('${prefix}')">送信</button>`;
+}
+
+async function sendAll(prefix) {
+  const taEl  = document.getElementById(prefix + 'mta');
+  const fileEl = document.getElementById(prefix + 'file');
+  const text  = taEl?.value?.trim() || '';
+  const file  = fileEl?.files?.[0];
+  if (!text && !file) return;
+  const btn = document.getElementById(prefix + 'sendbtn');
+  if (btn) { btn.textContent = '送信中...'; btn.disabled = true; }
   try {
-    const canvas=await html2canvas(area,{scale:2, backgroundColor:'#ffffff', useCORS:true});
-    const link=document.createElement('a');
-    link.href=canvas.toDataURL('image/png');
-    link.download=`${m.label}_精算書_${seller.name}.png`;
-    link.click();
-    toast(`${seller.name} 様のPNGをダウンロードしました ✓`);
-  } catch(e) {
-    toast('画像生成に失敗しました','err');
-  }
-  area.innerHTML='';
-}
-
-// ===== Backup / Restore =====
-function exportBackup() {
-  const data = { sellers: S.sellers, records: S.records, payments: S.payments, exportedAt: new Date().toLocaleString('ja-JP') };
-  const json = JSON.stringify(data, null, 2);
-  const date = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'-');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([json], {type:'application/json'}));
-  a.download = `Lavique_バックアップ_${date}.json`;
-  a.click();
-  toast('バックアップをダウンロードしました ✓');
-}
-function importBackup(inp) {
-  const f = inp.files[0]; if (!f) return;
-  if (!confirm('現在のデータをバックアップファイルで上書きします。よろしいですか？')) { inp.value=''; return; }
-  const r = new FileReader();
-  r.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (!data.sellers || !data.records) throw new Error();
-      S.sellers = data.sellers;
-      S.records = data.records;
-      S.payments = data.payments || {};
-      persist();
-      renderSellersList();
-      renderMonthGrid();
-      toast('データを復元しました ✓');
-    } catch(err) {
-      toast('復元に失敗しました。正しいバックアップファイルか確認してください','err');
+    if (text) { submitMsg(prefix, text, null); taEl.value = ''; }
+    if (file) {
+      const url = await uploadImage(file);
+      submitMsg(prefix, '', url);
+      fileEl.value = '';
     }
-    inp.value='';
-  };
-  r.readAsText(f, 'UTF-8');
+  } catch(e) { alert('送信に失敗しました。'); }
+  if (btn) { btn.textContent = '送信'; btn.disabled = false; }
 }
 
-const dz=document.getElementById('drop-zone');
-dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
-dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
-dz.addEventListener('drop',e=>{
-  e.preventDefault(); dz.classList.remove('drag-over');
-  const f=e.dataTransfer.files[0];
-  if (f){const r=new FileReader();r.onload=ev=>parseCSV(ev.target.result,f.name);r.readAsText(f,'UTF-8');}
+function submitMsg(prefix, text, imageUrl) {
+  if (!currentId) return;
+  const c  = casesData[currentId] || {};
+  const sl = role==='admin'?'管理者１':role==='goto'?'管理者２':role==='factory_ena'?'恵那シルク':role==='factory_shouwa'?'昭和転写':c.studentName||'生徒';
+
+  let status, forwardTo;
+  if (isAdmin()) {
+    // Admin messages go directly as forwarded — visible to both factory and student
+    status    = 'forwarded';
+    forwardTo = 'both';
+  } else if (isFactory()) {
+    status    = 'pending';
+    forwardTo = null;
+  } else {
+    // student
+    status    = 'pending';
+    forwardTo = null;
+  }
+
+  const msg = {
+    sender: role, senderLabel: sl,
+    text: text || '', imageUrl: imageUrl || null,
+    timestamp: ts(), status, forwardTo,
+  };
+  if (!imageUrl) delete msg.imageUrl;
+
+  db.ref('messages/'+currentId).push(msg).then(() => {
+    if (status === 'pending') notifyPending(msg, c);
+    if (status === 'forwarded' && forwardTo === 'both') {
+      // Notify both factory and student
+      const c2 = casesData[currentId] || {};
+      const fe = FACTORY_EMAILS[c2.factory] || '';
+      if (fe) sendNotification(fe, msg.senderLabel, c2.designName, c2.studentName, msg.text || '（画像）');
+      if (c2.studentEmail) sendNotification(c2.studentEmail, msg.senderLabel, c2.designName, c2.studentName, msg.text || '（画像）');
+    }
+  });
+}
+
+function sendMsg(taId) {
+  const text = document.getElementById(taId)?.value?.trim();
+  if (!text || !currentId) return;
+  submitMsg(taId.replace('mta',''), text, null);
+  document.getElementById(taId).value = '';
+}
+
+// ═══════════════════════════════════════════
+// STUDENT SEND (pending to factory)
+// ═══════════════════════════════════════════
+async function sendStuAll() {
+  const text = document.getElementById('stuta')?.value?.trim() || '';
+  const fileInput = document.getElementById('stufile');
+  const file = fileInput?.files?.[0];
+  if (!text && !file) return;
+  if (!currentId) return;
+  const c = casesData[currentId] || {};
+
+  const sendBtn = document.querySelector('#stuIn .sbtn');
+  if (sendBtn) { sendBtn.textContent = '送信中...'; sendBtn.disabled = true; }
+
+  try {
+    if (text) {
+      const msg = {sender:'student', senderLabel:c.studentName||'生徒', text, timestamp:ts(), status:'pending', forwardTo:null};
+      await db.ref('messages/'+currentId).push(msg);
+      notifyPending(msg, c);
+      document.getElementById('stuta').value = '';
+    }
+    if (file) {
+      const url = await uploadImage(file);
+      const msg = {sender:'student', senderLabel:c.studentName||'生徒', text:'', imageUrl:url, timestamp:ts(), status:'pending', forwardTo:null};
+      await db.ref('messages/'+currentId).push(msg);
+      notifyPending(msg, c);
+      fileInput.value = '';
+    }
+  } catch(e) {
+    alert('送信に失敗しました。再度お試しください。');
+  }
+  if (sendBtn) { sendBtn.textContent = '送信'; sendBtn.disabled = false; }
+}
+
+function sendStu() {
+  const text = document.getElementById('stuta')?.value?.trim();
+  if (!text || !currentId) return;
+  const c  = casesData[currentId] || {};
+  const msg = {
+    sender:'student', senderLabel:c.studentName||'生徒',
+    text, timestamp:ts(), status:'pending', forwardTo:null,
+  };
+  db.ref('messages/'+currentId).push(msg).then(() => notifyPending(msg, c));
+  document.getElementById('stuta').value = '';
+}
+
+async function sendStuImage() {
+  const fileInput = document.getElementById('stufile');
+  if (!fileInput || !fileInput.files[0] || !currentId) return;
+  const c   = casesData[currentId] || {};
+  const btn = document.getElementById('stuimgbtn');
+  if (btn) { btn.textContent = '送信中...'; btn.disabled = true; }
+  try {
+    const url = await uploadImage(fileInput.files[0]);
+    const msg = {
+      sender:'student', senderLabel:c.studentName||'生徒',
+      text:'', imageUrl:url, timestamp:ts(), status:'pending', forwardTo:null,
+    };
+    db.ref('messages/'+currentId).push(msg).then(() => notifyPending(msg, c));
+    fileInput.value = '';
+    if (btn) { btn.textContent = '送信'; btn.disabled = false; }
+  } catch(e) {
+    alert('画像のアップロードに失敗しました。');
+    if (btn) { btn.textContent = '送信'; btn.disabled = false; }
+  }
+}
+
+// ═══════════════════════════════════════════
+// STUDENT VIEW
+// ═══════════════════════════════════════════
+function renderStuDet(c) {
+  document.getElementById('stuInfo').innerHTML = `
+    <div style="font-size:15px;font-weight:800;margin-bottom:10px">${c.designName}</div>
+    <div class="igrid">
+      <div class="ibox"><div class="ilbl">仕様</div><div class="ival">${c.spec||'—'}</div></div>
+      <div class="ibox"><div class="ilbl">担当工場</div><div class="ival">${c.factory||'担当決定待ち'}</div></div>
+    </div>
+    ${c.finalAmount?`<div class="abox" style="background:#f0fdf4;margin-bottom:10px"><div class="ilbl">お見積金額（税抜）</div><div class="ival" style="color:var(--green);font-size:18px">¥${c.finalAmount.toLocaleString()}</div></div>`:''}
+    ${c.note?`<div style="font-size:12px;color:var(--ink-light)">${c.note}</div>`:''}`;
+  document.getElementById('stuFlow').innerHTML = ST.map(s=>{
+    const on=c.status===s.key;
+    return `<span class="step" style="background:${on?s.color:'transparent'};color:${on?'#fff':s.color};border-color:${s.color};opacity:${on?1:0.4}">${s.key}</span>`;
+  }).join('');
+  if (!document.getElementById('stuta')) {
+    document.getElementById('stuIn').innerHTML = `
+      <div class="mrow">
+        <textarea class="mta" id="stuta" rows="2" placeholder="工場へメッセージを送る..."></textarea>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+        <span class="file-lbl">📎 画像添付：</span>
+        <input type="file" id="stufile" accept="image/*" style="font-size:12px;flex:1;min-width:0">
+      </div>
+      <button class="sbtn" style="width:100%" onclick="sendStuAll()">送信</button>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+// STUDENT URL CHECK
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// REGISTRATION FORM
+// ═══════════════════════════════════════════
+let regGenUrl = '';
+
+function checkRegisterUrl() {
+  const reg = new URLSearchParams(location.search).get('register');
+  if (!reg) return false;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('registerScreen').classList.remove('hidden');
+  document.getElementById('registerScreen').style.display = 'flex';
+  return true;
+}
+
+async function submitRegister() {
+  const name    = document.getElementById('rf_name').value.trim();
+  const email   = document.getElementById('rf_email').value.trim();
+  const design  = document.getElementById('rf_design').value.trim();
+  const factory = document.getElementById('rf_factory').value;
+  const data    = document.getElementById('rf_data').value.trim();
+  if (!name || !email || !design || !factory || !data) {
+    document.getElementById('regErr').classList.remove('hidden'); return;
+  }
+  document.getElementById('regErr').classList.add('hidden');
+  const btn = document.querySelector('#regForm .btn-p');
+  if (btn) { btn.textContent = '送信中...'; btn.disabled = true; }
+  try {
+    const key = genKey();
+    const note = [
+      '入稿形式：' + document.getElementById('rf_format').value,
+      'データURL：' + data,
+      'サイズ：' + document.getElementById('rf_size').value,
+      '両面の柄：' + document.getElementById('rf_pattern').value,
+      '希望枚数：' + document.getElementById('rf_qty').value,
+      '合紙：' + document.getElementById('rf_paper').value,
+      '裁断希望：' + document.getElementById('rf_cut').value,
+      'サンプル：' + document.getElementById('rf_sample').value,
+      '見積返信期限：' + (document.getElementById('rf_deadline').value || '未定'),
+      '備考：' + document.getElementById('rf_note').value.trim(),
+    ].join(' | ');
+    await db.ref('cases').push({
+      studentName:  name,
+      studentEmail: email,
+      studentTel:   document.getElementById('rf_tel').value.trim(),
+      studentAddr:  document.getElementById('rf_addr').value.trim(),
+      designName:   design,
+      spec:         document.getElementById('rf_size').value,
+      note,
+      studentKey:   key,
+      status:       '入稿受付',
+      statusDate:   today(),
+      factory,
+      estimate:     0, finalAmount: 0, markup: 0,
+      createdAt:    ts(),
+    });
+    const url = `${location.origin}${location.pathname}?s=${key}`;
+    regGenUrl = url;
+    document.getElementById('regUrl').textContent = url;
+    document.getElementById('regForm').classList.add('hidden');
+    document.getElementById('regDone').classList.remove('hidden');
+    // Notify admin
+    sendNotification(RIE_EMAIL,  name, design, name, 'フォームからの新規お申込みがありました');
+    sendNotification(GOTO_EMAIL, name, design, name, 'フォームからの新規お申込みがありました');
+    // Notify student with their URL
+    if (email) {
+      emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
+        to_email:     email,
+        name:         name,
+        sender_name:  'Lavique',
+        case_name:    design,
+        student_name: name,
+        message:      '入稿のお申込みが完了しました。以下があなた専用のページURLです。大切に保管してください。\n\n' + url,
+        app_url:      url,
+        email:        email,
+      }).catch(e => console.log('Student email error:', e));
+    }
+  } catch(e) {
+    alert('送信に失敗しました。再度お試しください。');
+    if (btn) { btn.textContent = '送信する'; btn.disabled = false; }
+  }
+}
+
+function copyRegUrl() {
+  navigator.clipboard.writeText(regGenUrl).then(() => alert('URLをコピーしました！大切に保管してください。'));
+}
+
+function checkStudentUrl() {
+  const key = new URLSearchParams(location.search).get('s');
+  if (!key) return;
+  role = 'student';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('studentApp').style.display  = 'flex';
+  document.getElementById('studentApp').classList.add('active');
+  document.getElementById('stuInfo').innerHTML = '<div style="text-align:center;padding:40px;color:var(--pink)">読み込み中...</div>';
+  const timer = setTimeout(() => showStuErr('タイムアウトしました。ページを再読み込みしてください。'), 15000);
+  db.ref('cases').once('value', snap => {
+    clearTimeout(timer);
+    const all = snap.val();
+    if (!all) { showStuErr('案件が見つかりません。'); return; }
+    const entry = Object.entries(all).find(([,c])=>c.studentKey===key);
+    if (!entry) { showStuErr('案件が見つかりません。URLをご確認ください。'); return; }
+    const [cid, c] = entry;
+    currentId = cid; casesData[cid] = c;
+    document.getElementById('stuName').textContent = c.studentName;
+    renderStuDet(c);
+    startMsgListen('stu');
+    db.ref('cases/'+cid).on('value', s2=>{
+      if(s2.val()){ casesData[cid]=s2.val(); renderStuDet(s2.val()); }
+    });
+  }, err => { clearTimeout(timer); showStuErr('接続エラー: '+err.message); });
+}
+
+function showStuErr(msg) {
+  document.getElementById('stuBody').classList.add('hidden');
+  document.getElementById('stuNF').classList.remove('hidden');
+  document.getElementById('stuNF').querySelector('.notice').textContent = msg;
+}
+
+// ═══════════════════════════════════════════
+// ADD / DELETE CASE
+// ═══════════════════════════════════════════
+function openAdd() {
+  ['fs','fem','fn','fno'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fsp').value='A4を2面付け';
+  document.getElementById('ff').value='';
+  document.getElementById('addErr').classList.add('hidden');
+  document.getElementById('urlArea').classList.add('hidden');
+  document.getElementById('saveBtn').classList.remove('hidden');
+  document.getElementById('addModal').classList.remove('hidden');
+}
+function closeAdd() { document.getElementById('addModal').classList.add('hidden'); }
+
+function saveCase() {
+  const student      = document.getElementById('fs').value.trim();
+  const studentEmail = document.getElementById('fem').value.trim();
+  const name         = document.getElementById('fn').value.trim();
+  if (!student||!name) { document.getElementById('addErr').classList.remove('hidden'); return; }
+  const key = genKey();
+  db.ref('cases').push({
+    studentName:student, studentEmail, designName:name,
+    spec:document.getElementById('fsp').value,
+    factory:document.getElementById('ff').value,
+    note:document.getElementById('fno').value,
+    studentKey:key, status:'入稿受付', statusDate:today(),
+    estimate:0, finalAmount:0, markup:0, createdAt:ts()
+  }).then(() => {
+    // 確実にリスト更新
+    db.ref('cases').once('value', s => { casesData = s.val() || {}; renderMgrList(); });
+  });
+  const url = `${location.origin}${location.pathname}?s=${key}`;
+  genUrl = url;
+  document.getElementById('urlBox').textContent = url;
+  document.getElementById('urlArea').classList.remove('hidden');
+  document.getElementById('saveBtn').classList.add('hidden');
+}
+
+function copyUrl() { navigator.clipboard.writeText(genUrl).then(()=>alert('コピーしました！このURLを生徒に送ってください。')); }
+function copyStudentUrl(url) { navigator.clipboard.writeText(url).then(()=>alert('コピーしました！生徒に送ってください。')); }
+
+function deleteCase() {
+  if (!currentId||role!=='admin') return;
+  if (!confirm('この案件を削除しますか？\nメッセージも含めて完全に削除されます。')) return;
+  const id = currentId;
+  backToList('mgr');
+  db.ref('cases/'+id).remove();
+  db.ref('messages/'+id).remove();
+}
+
+document.getElementById('addModal').addEventListener('click', e=>{
+  if(e.target.id==='addModal') closeAdd();
 });
 
-// ===== Init =====
-hydrate();
-renderSellersList();
+function goHome() {
+  if (role === 'admin' || role === 'goto') {
+    backToList('mgr');
+  } else if (isFactory()) {
+    backToList('fct');
+  } else {
+    // student: scroll to top
+    window.scrollTo(0,0);
+  }
+}
+
+if (!checkRegisterUrl()) checkStudentUrl();
 </script>
+  <!-- 見積書モーダル -->
+  <div id="quoteModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;overflow-y:auto;padding:20px">
+    <div id="quotePaper" style="max-width:720px;margin:0 auto;background:#fff;border-radius:8px;padding:40px 48px;font-family:'Noto Sans JP',sans-serif;color:#1a1a1a;font-size:14px;line-height:1.7">
+      <!-- rendered by JS -->
+    </div>
+    <div style="max-width:720px;margin:16px auto;display:flex;gap:12px" id="quoteBtns">
+      <button onclick="window.print()" style="flex:1;padding:12px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">🖨️ 印刷 / PDF保存</button>
+      <button onclick="document.getElementById('quoteModal').classList.add('hidden')" style="flex:1;padding:12px;background:#e5e7eb;color:#374151;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✕ 閉じる</button>
+    </div>
+  </div>
+  <style>
+    @media print {
+      body > *:not(#quoteModal) { display:none !important; }
+      #quoteModal { position:static !important; background:none !important; padding:0 !important; }
+      #quoteBtns { display:none !important; }
+      #quotePaper { box-shadow:none !important; border-radius:0 !important; padding:20px !important; }
+    }
+  </style>
 </body>
 </html>
